@@ -2,6 +2,8 @@
 
 Une API REST pour accéder aux emplois du temps EPSI/WIS. Ceci est une version Python sous format d'api WEB du projet Rust original [irori-edt](https://gitlab.com/louisducruet/irori-edt).
 
+Un serveur officiel de cet api est disponnible à : [https://epsi.enzomtp.party](https://epsi.enzomtp.party)
+
 ## Installation
 
 1. Cloner le dépôt
