@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 class EdtElement:
     def __init__(self, name=None, room=None, teacher=None, date=None, start_time=None, end_time=None):
-        self.name = name
+        self.name = name.split('\r\n')[0] if name else None
         self.room = room
         self.teacher = teacher
         self.date = date

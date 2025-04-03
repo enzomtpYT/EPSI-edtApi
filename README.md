@@ -31,12 +31,12 @@ GET /
 
 Paramètres de Requête :
 - `user` (obligatoire) : Email de l'école sans le domaine
-- `begin` (optionnel) : Date de début au format JJ/MM/AAAA (par défaut : aujourd'hui)
-- `end` (optionnel) : Date de fin au format JJ/MM/AAAA (par défaut : date de début)
+- `begin` (optionnel) : Date de début au format JJ-MM-AAAA (par défaut : aujourd'hui)
+- `end` (optionnel) : Date de fin au format JJ-MM-AAAA (par défaut : date de début)
 
 Exemple :
 ```
-GET /?user=john.doe&begin=01/04/2024&end=07/04/2024
+GET /?user=john.doe&begin=01-04-2024&end=07-04-2024
 ```
 
 ### Obtenir l'Emploi du Temps pour une Date Spécifique
@@ -46,14 +46,14 @@ GET /<date>
 ```
 
 Paramètres de Chemin :
-- `date` : La date au format JJ/MM/AAAA
+- `date` : La date au format JJ-MM-AAAA
 
 Paramètres de Requête :
 - `user` (obligatoire) : Email de l'école sans le domaine
 
 Exemple :
 ```
-GET /03/04/2024?user=john.doe
+GET /03-04-2024?user=john.doe
 ```
 
 ## Format de Réponse
