@@ -21,6 +21,15 @@ python app.py
 
 L'API sera disponible à l'adresse `http://localhost:5000`
 
+## Interface Web
+
+L'API inclut une interface web utilisateur accessible à la racine du serveur (`/`). Cette interface permet de :
+
+- Visualiser l'emploi du temps semaine par semaine
+- Changer facilement entre les différentes semaines
+- Enregistrer votre identifiant utilisateur localement dans le navigateur
+- Basculer entre un thème clair et sombre
+
 ## Points d'Accès API
 
 ### Obtenir l'Emploi du Temps pour une Période
@@ -56,6 +65,25 @@ Exemple :
 GET /03-04-2024?user=john.doe
 ```
 
+### Obtenir l'Emploi du Temps pour une Semaine Complète
+
+```
+GET /week/<date>
+```
+
+Paramètres de Chemin :
+- `date` : N'importe quelle date de la semaine souhaitée au format JJ-MM-AAAA
+
+Paramètres de Requête :
+- `user` (obligatoire) : Email de l'école sans le domaine
+
+Exemple :
+```
+GET /week/03-04-2024?user=john.doe
+```
+
+Cette requête retournera l'emploi du temps pour la semaine complète contenant le 3 avril 2024.
+
 ## Format de Réponse
 
 L'API retourne des données JSON au format suivant :
@@ -90,6 +118,26 @@ Pour une date spécifique :
 ]
 ```
 
+Pour une semaine complète :
+```json
+[
+  [ // Lundi
+    {
+      "name": "Nom du Cours",
+      "room": "Numéro de Salle",
+      "teacher": "Nom du Professeur",
+      "date": "AAAA-MM-JJ",
+      "start_time": "HH:MM",
+      "end_time": "HH:MM"
+    }
+  ],
+  [ // Mardi
+    // Cours du mardi
+  ],
+  // ... autres jours de la semaine jusqu'à vendredi
+]
+```
+
 ## Gestion des Erreurs
 
 L'API retourne des codes de statut HTTP appropriés et des messages d'erreur :
@@ -106,4 +154,4 @@ Les réponses d'erreur incluent un message expliquant le problème :
 
 ## Licence
 
-Ce projet est sous la même licence que le projet Rust original. 
+Ce projet est sous la même licence que le projet Rust original.
