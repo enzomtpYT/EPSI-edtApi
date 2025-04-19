@@ -301,30 +301,11 @@
                 
                 // Create tabs for mobile view and gather visible days
                 days.forEach((day, index) => {
-                    // Check if day has content
-                    let shouldShowDay = true;
-                    
-                    if (data[index] && data[index].length > 0) {
-                        shouldShowDay = false; // Start assuming we should hide (all items are null)
-                        
-                        // Check each item to see if at least one has non-null values
-                        for (const item of data[index]) {
-                            // If any of the item's fields are not null, we should show the day
-                            if (item.end_time !== null || 
-                                item.name !== null ||
-                                item.room !== null ||
-                                item.start_time !== null ||
-                                item.teacher !== null) {
-                                shouldShowDay = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Skip this day if it should not be shown
-                    if (!shouldShowDay) {
-                        return;
-                    }
+                    data[index] = data[index].filter(item => item.end_time !== null && 
+                    item.name !== null &&
+                    item.room !== null &&
+                    item.start_time !== null &&
+                    item.teacher !== null);
 
                     // Add to visible days
                     visibleDays.push(index);
@@ -362,31 +343,6 @@
                 
                 // Create columns for each day
                 days.forEach((day, index) => {
-                    // Check if all items in this day have null values for required fields
-                    let shouldShowDay = true;
-                    
-                    if (data[index] && data[index].length > 0) {
-                        shouldShowDay = false; // Start assuming we should hide (all items are null)
-                        
-                        // Check each item to see if at least one has non-null values
-                        for (const item of data[index]) {
-                            // If any of the item's fields are not null, we should show the day
-                            if (item.end_time !== null || 
-                                item.name !== null ||
-                                item.room !== null ||
-                                item.start_time !== null ||
-                                item.teacher !== null) {
-                                shouldShowDay = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Skip this day if it should not be shown
-                    if (!shouldShowDay) {
-                        return;
-                    }
-                    
                     const date = datesOfWeek[index];
                     const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
                     
