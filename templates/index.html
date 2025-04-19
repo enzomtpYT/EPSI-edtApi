@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPSI Emploi du temps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Theme toggle button -->
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <i id="themeIcon" class="bi bi-sun-fill"></i>
+    </button>
+
+    <div class="container schedule-container">
+        <h1 class="text-center mb-4">EPSI Emploi du temps</h1>
+        
+        <!-- User ID input (only shown if not stored) -->
+        <div id="userIdContainer" class="user-id-container d-none">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Bienvenue</h5>
+                    <p class="card-text">Veuillez entrer votre identifiant utilisateur pour continuer.</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="newUserId" placeholder="Entrez votre identifiant">
+                        <button class="btn btn-primary" type="button" id="saveUserId">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Week selector -->
+        <div class="user-form">
+            <div class="row g-3">
+                <div class="col-md-4 col-sm-12">
+                    <label for="weekDate" class="form-label">Semaine du</label>
+                    <input type="date" class="form-control" id="weekDate">
+                </div>
+                <div class="col-md-4 col-sm-12">
+                    <label for="currentUserId" class="form-label">Utilisateur</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="currentUserId" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="changeUserId">Changer</button>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary w-100" id="refreshBtn">Actualiser l'emploi du temps</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3" role="alert">
+            Semaine du {{ week.start }} au {{ week.end }}
+        </div>
+        
+        <!-- Mobile day tabs navigation (hidden on larger screens) -->
+        <div class="d-md-none tab-navigation mb-3" id="daysTabs">
+            <!-- Day tabs will be inserted here by JS -->
+        </div>
+        
+        <div class="row" id="scheduleContainer">
+            <!-- Schedule will be loaded here -->
+            <div class="col-12 text-center my-5">
+                <div class="spinner-border text-primary d-none" id="loading" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p id="initial-message">Chargement de l'emploi du temps...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const userIdContainer = document.getElementById('userIdContainer');
+            const newUserId = document.getElementById('newUserId');
+            const saveUserId = document.getElementById('saveUserId');
+            const currentUserId = document.getElementById('currentUserId');
+            const changeUserId = document.getElementById('changeUserId');
+            const weekDate = document.getElementById('weekDate');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            const daysTabs = document.getElementById('daysTabs');
+            const loading = document.getElementById('loading');
+            const initialMessage = document.getElementById('initial-message');
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            
+            // Variables for mobile view
+            let activeDayIndex = 0;
+            let currentScheduleData = null;
+            let isMobileView = window.innerWidth < 768;
+            
+            // Check for window resize to toggle between mobile and desktop views
+            window.addEventListener('resize', function() {
+                const newIsMobileView = window.innerWidth < 768;
+                if (newIsMobileView !== isMobileView) {
+                    isMobileView = newIsMobileView;
+                    if (currentScheduleData) {
+                        displaySchedule(currentScheduleData, new Date(weekDate.value));
+                    }
+                }
+            });
+            
+            // Set current date as default
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            weekDate.value = formattedDate;
+            
+            // Check if user ID is stored in localStorage
+            const savedUserId = localStorage.getItem('edtUserId');
+            
+            if (savedUserId) {
+                // User ID exists, display it and load schedule
+                currentUserId.value = savedUserId;
+                loadSchedule(savedUserId, new Date(weekDate.value));
+            } else {
+                // No user ID, show the input form
+                userIdContainer.classList.remove('d-none');
+                initialMessage.textContent = "Veuillez entrer votre identifiant pour afficher l'emploi du temps";
+            }
+            
+            // Save new user ID
+            saveUserId.addEventListener('click', function() {
+                const userId = newUserId.value.trim();
+                if (!userId) {
+                    alert("Veuillez entrer votre identifiant utilisateur.");
+                    return;
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('edtUserId', userId);
+                currentUserId.value = userId;
+                
+                // Hide user ID container
+                userIdContainer.classList.add('d-none');
+                
+                // Load schedule
+                loadSchedule(userId, new Date(weekDate.value));
+            });
+            
+            // Change user ID
+            changeUserId.addEventListener('click', function() {
+                userIdContainer.classList.remove('d-none');
+                newUserId.value = currentUserId.value;
+                newUserId.focus();
+            });
+            
+            // Refresh schedule
+            refreshBtn.addEventListener('click', function() {
+                const userId = localStorage.getItem('edtUserId');
+                if (!userId) {
+                    userIdContainer.classList.remove('d-none');
+                    alert("Veuillez d'abord entrer votre identifiant utilisateur.");
+                    return;
+                }
+                
+                loadSchedule(userId, new Date(weekDate.value));
+            });
+            
+            // Date change event
+            weekDate.addEventListener('change', function() {
+                const userId = localStorage.getItem('edtUserId');
+                if (userId) {
+                    loadSchedule(userId, new Date(weekDate.value));
+                }
+            });
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', function() {
+                toggleTheme();
+            });
+            
+            // Check for saved theme preference and apply it
+            function applyTheme() {
+                const savedTheme = localStorage.getItem('edtTheme') || 'dark';
+                const htmlElement = document.documentElement;
+                
+                if (savedTheme === 'light') {
+                    htmlElement.classList.remove('dark-mode');
+                    htmlElement.classList.add('light-mode');
+                    themeIcon.classList.remove('bi-sun-fill');
+                    themeIcon.classList.add('bi-moon-fill');
+                } else {
+                    // Default to dark mode
+                    htmlElement.classList.remove('light-mode');
+                    htmlElement.classList.add('dark-mode');
+                    themeIcon.classList.remove('bi-moon-fill');
+                    themeIcon.classList.add('bi-sun-fill');
+                }
+            }
+            
+            // Toggle between light and dark themes
+            function toggleTheme() {
+                const htmlElement = document.documentElement;
+                if (htmlElement.classList.contains('dark-mode')) {
+                    // Switch to light mode
+                    htmlElement.classList.remove('dark-mode');
+                    htmlElement.classList.add('light-mode');
+                    themeIcon.classList.remove('bi-sun-fill');
+                    themeIcon.classList.add('bi-moon-fill');
+                    localStorage.setItem('edtTheme', 'light');
+                } else {
+                    // Switch to dark mode
+                    htmlElement.classList.remove('light-mode');
+                    htmlElement.classList.add('dark-mode');
+                    themeIcon.classList.remove('bi-moon-fill');
+                    themeIcon.classList.add('bi-sun-fill');
+                    localStorage.setItem('edtTheme', 'dark');
+                }
+            }
+            
+            // Apply saved theme or default (dark mode) on page load
+            applyTheme();
+            
+            function loadSchedule(userId, selectedDate) {
+                // Show loading spinner
+                loading.classList.remove('d-none');
+                initialMessage.classList.remove('d-none');
+                initialMessage.textContent = "Chargement de l'emploi du temps...";
+                
+                // Format date for URL
+                const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
+                
+                // Fetch schedule data
+                fetch(`/week/${formattedDate}?user=${userId}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    currentScheduleData = data;
+                    displaySchedule(data, selectedDate);
+                    loading.classList.add('d-none');
+                    initialMessage.classList.add('d-none');
+                })
+                .catch(error => {
+                    console.error('Error fetching schedule data:', error);
+                    scheduleContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger" role="alert">
+                                Erreur lors de la récupération de l'emploi du temps. Veuillez réessayer.
+                            </div>
+                        </div>
+                    `;
+                    loading.classList.add('d-none');
+                    initialMessage.classList.add('d-none');
+                });
+            }
+
+            function displaySchedule(data, selectedDate) {
+                // Clear previous schedule
+                scheduleContainer.innerHTML = '';
+                daysTabs.innerHTML = '';
+                
+                // Get Monday of the selected week
+                const selectedDay = selectedDate.getDay() || 7; // Convert Sunday (0) to 7
+                const monday = new Date(selectedDate);
+                monday.setDate(monday.getDate() - (selectedDay - 1));
+                
+                // Create days of the week
+                const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+                const datesOfWeek = [];
+                const visibleDays = [];
+                
+                // Create date objects for each day of the week
+                for (let i = 0; i < 5; i++) {
+                    const date = new Date(monday);
+                    date.setDate(monday.getDate() + i);
+                    datesOfWeek.push(date);
+                }
+                
+                // Create tabs for mobile view and gather visible days
+                days.forEach((day, index) => {
+                    // Check if day has content
+                    let shouldShowDay = true;
+                    
+                    if (data[index] && data[index].length > 0) {
+                        shouldShowDay = false; // Start assuming we should hide (all items are null)
+                        
+                        // Check each item to see if at least one has non-null values
+                        for (const item of data[index]) {
+                            // If any of the item's fields are not null, we should show the day
+                            if (item.end_time !== null || 
+                                item.name !== null ||
+                                item.room !== null ||
+                                item.start_time !== null ||
+                                item.teacher !== null) {
+                                shouldShowDay = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Skip this day if it should not be shown
+                    if (!shouldShowDay) {
+                        return;
+                    }
+
+                    // Add to visible days
+                    visibleDays.push(index);
+                    
+                    // Create tab for mobile view
+                    const date = datesOfWeek[index];
+                    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    
+                    const tab = document.createElement('span');
+                    tab.className = 'day-tab';
+                    tab.dataset.dayIndex = index;
+                    tab.innerText = `${day} ${formattedDate}`;
+                    
+                    tab.addEventListener('click', function() {
+                        // Update active tab
+                        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // Show selected day in mobile view
+                        activeDayIndex = parseInt(this.dataset.dayIndex);
+                        showActiveDayOnMobile();
+                    });
+                    
+                    daysTabs.appendChild(tab);
+                });
+                
+                // Set default active tab (first day)
+                if (visibleDays.length > 0) {
+                    activeDayIndex = visibleDays[0];
+                    const firstTab = daysTabs.querySelector(`.day-tab[data-day-index="${activeDayIndex}"]`);
+                    if (firstTab) {
+                        firstTab.classList.add('active');
+                    }
+                }
+                
+                // Create columns for each day
+                days.forEach((day, index) => {
+                    // Check if all items in this day have null values for required fields
+                    let shouldShowDay = true;
+                    
+                    if (data[index] && data[index].length > 0) {
+                        shouldShowDay = false; // Start assuming we should hide (all items are null)
+                        
+                        // Check each item to see if at least one has non-null values
+                        for (const item of data[index]) {
+                            // If any of the item's fields are not null, we should show the day
+                            if (item.end_time !== null || 
+                                item.name !== null ||
+                                item.room !== null ||
+                                item.start_time !== null ||
+                                item.teacher !== null) {
+                                shouldShowDay = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Skip this day if it should not be shown
+                    if (!shouldShowDay) {
+                        return;
+                    }
+                    
+                    const date = datesOfWeek[index];
+                    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+                    
+                    // Create column for day
+                    const dayColumn = document.createElement('div');
+                    dayColumn.className = 'col-md day-column';
+                    dayColumn.dataset.dayIndex = index;
+                    
+                    // On mobile, only show the active day
+                    if (isMobileView && index !== activeDayIndex) {
+                        dayColumn.style.display = 'none';
+                    }
+                    
+                    dayColumn.innerHTML = `
+                        <h5 class="text-center mb-3">${day} ${formattedDate}</h5>
+                        <div id="day-${index}" class="day-schedule"></div>
+                    `;
+                    scheduleContainer.appendChild(dayColumn);
+                    
+                    const daySchedule = dayColumn.querySelector(`#day-${index}`);
+                    
+                    // Find schedule items for this day
+                    if (data[index] && data[index].length > 0) {
+                        // Sort by start time
+                        const sortedItems = [...data[index]].sort((a, b) => {
+                            if (a.start_time && b.start_time) {
+                                return a.start_time.localeCompare(b.start_time);
+                            }
+                            return 0;
+                        });
+                        
+                        // Display items
+                        sortedItems.forEach(item => {
+                            const scheduleItem = document.createElement('div');
+                            scheduleItem.className = 'schedule-item';
+                            scheduleItem.innerHTML = `
+                                <div class="time">${item.start_time || '??:??'} - ${item.end_time || '??:??'}</div>
+                                <div class="name fw-bold">${item.name || 'Sans titre'}</div>
+                                <div class="room">${item.room || 'Salle non spécifiée'}</div>
+                                <div class="teacher">${item.teacher || 'Enseignant non spécifié'}</div>
+                            `;
+                            daySchedule.appendChild(scheduleItem);
+                        });
+                    } else {
+                        // No schedule items for this day
+                        daySchedule.innerHTML = '<div class="empty-day">Aucun cours prévu</div>';
+                    }
+                });
+                
+                // If we're on mobile, show only the active day's column
+                if (isMobileView) {
+                    showActiveDayOnMobile();
+                }
+            }
+            
+            // Function to show only the active day on mobile
+            function showActiveDayOnMobile() {
+                if (!isMobileView) return;
+                
+                // Hide all day columns
+                document.querySelectorAll('.day-column').forEach(column => {
+                    column.style.display = 'none';
+                });
+                
+                // Show only the active day column
+                const activeColumn = document.querySelector(`.day-column[data-day-index="${activeDayIndex}"]`);
+                if (activeColumn) {
+                    activeColumn.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

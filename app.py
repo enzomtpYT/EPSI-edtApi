@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from datetime import datetime, timedelta
 from dateutil import parser
 import requests
@@ -84,34 +84,31 @@ def get_edt_elements(begin_date, end_date, user):
 
 @app.route('/', methods=['GET'])
 def get_schedule():
-    user = request.args.get('user')
-    begin = request.args.get('begin')
-    end = request.args.get('end')
+    date = request.args.get('date')
     
-    if not user:
-        return jsonify({"error": "User parameter is required"}), 400
+    # For web interface
+    current_date = datetime.now().date()
     
-    try:
-        begin_date = parser.parse(begin, dayfirst=True).date() if begin else datetime.now().date()
-        end_date = parser.parse(end, dayfirst=True).date() if end else begin_date
-        
-        if begin_date > end_date:
-            return jsonify({"error": "Start date cannot be after end date"}), 400
-            
-        results = get_edt_elements(begin_date, end_date, user)
-        
-        # Convert results to JSON format
-        schedule_data = []
-        for day in results:
-            day_data = []
-            for element in day:
-                day_data.append(element.to_dict())
-            schedule_data.append(day_data)
-            
-        return jsonify(schedule_data)
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # If a date is provided, use that instead of current date
+    if date:
+        try:
+            current_date = parser.parse(date, dayfirst=True).date()
+        except:
+            pass
+    
+    # Calculate week start and end dates
+    weekday = current_date.weekday()
+    week_start = current_date - timedelta(days=weekday)
+    week_end = week_start + timedelta(days=6)
+    
+    # Format dates for display
+    formatted_week = {
+        "start": week_start.strftime("%d/%m/%Y"),
+        "end": week_end.strftime("%d/%m/%Y"),
+        "current": current_date.strftime("%d/%m/%Y")
+    }
+    
+    return render_template('index.html', week=formatted_week)
 
 @app.route('/<date>', methods=['GET'])
 def get_schedule_by_date(date):
@@ -131,5 +128,36 @@ def get_schedule_by_date(date):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/week/<date>', methods=['GET'])
+def get_schedule_by_week(date):
+    user = request.args.get('user')
+    
+    if not user:
+        return jsonify({"error": "User parameter is required"}), 400
+    
+    try:
+        # Parse the given date
+        search_date = parser.parse(date, dayfirst=True).date()
+        
+        # Calculate the Monday and Sunday of the week containing the given date
+        weekday = search_date.weekday()  # 0 is Monday, 6 is Sunday
+        begin_date = search_date - timedelta(days=weekday)  # Monday
+        end_date = begin_date + timedelta(days=6)  # Sunday
+        
+        results = get_edt_elements(begin_date, end_date, user)
+        
+        # Convert results to JSON format
+        schedule_data = []
+        for day in results:
+            day_data = []
+            for element in day:
+                day_data.append(element.to_dict())
+            schedule_data.append(day_data)
+            
+        return jsonify(schedule_data)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
