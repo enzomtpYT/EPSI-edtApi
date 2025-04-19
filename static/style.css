@@ -204,7 +204,35 @@ body {
 }
 
 /* Mobile responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 605px) {
+  h1 {
+    font-size: 1.25rem;
+    margin-top: 8px;
+  }
+
+  .schedule-item {
+    padding: 8px;
+  }
+
+  .schedule-item .time,
+  .schedule-item .room,
+  .schedule-item .teacher {
+    font-size: 0.75em;
+  }
+
+  .schedule-container {
+    padding: 0 5px;
+  }
+
+  .day-column {
+    min-height: auto;
+    margin-bottom: 20px;
+    border-right: none;
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 605px) {
   .schedule-container {
     padding: 0 10px;
   }
@@ -258,28 +286,7 @@ body {
     flex: 0 0 auto;
     white-space: nowrap;
   }
-}
 
-/* Day tabs for mobile view */
-.day-tab {
-  cursor: pointer;
-  padding: 8px 12px;
-  margin: 0 2px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.day-tab.active {
-  background-color: #8a56fb;
-  color: #fff;
-}
-
-.dark-mode .day-tab.active {
-  background-color: #aa82ff;
-}
-
-/* Improve form elements on mobile */
-@media (max-width: 576px) {
   .user-form .row > div {
     margin-bottom: 15px;
   }
@@ -299,4 +306,22 @@ body {
     border-radius: 4px !important;
     margin-left: 0;
   }
+}
+
+/* Day tabs for mobile view */
+.day-tab {
+  cursor: pointer;
+  padding: 8px 12px;
+  margin: 0 2px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.day-tab.active {
+  background-color: #8a56fb;
+  color: #fff;
+}
+
+.dark-mode .day-tab.active {
+  background-color: #aa82ff;
 }
