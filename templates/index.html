@@ -86,7 +86,6 @@
             const currentUserId = document.getElementById('currentUserId');
             const changeUserId = document.getElementById('changeUserId');
             const weekDate = document.getElementById('weekDate');
-            const refreshBtn = document.getElementById('refreshBtn');
             const scheduleContainer = document.getElementById('scheduleContainer');
             const daysTabs = document.getElementById('daysTabs');
             const loading = document.getElementById('loading');
@@ -203,18 +202,6 @@
                 newUserId.focus();
             });
             
-            // Refresh schedule
-            refreshBtn.addEventListener('click', function() {
-                const userId = localStorage.getItem('edtUserId');
-                if (!userId) {
-                    userIdContainer.classList.remove('d-none');
-                    alert("Veuillez d'abord entrer votre identifiant utilisateur.");
-                    return;
-                }
-                
-                loadSchedule(userId, currentMondayDate);
-            });
-            
             // Theme toggle functionality
             themeToggle.addEventListener('click', function() {
                 toggleTheme();
@@ -263,10 +250,13 @@
             applyTheme();
             
             function loadSchedule(userId, selectedDate) {
-                // Show loading spinner
-                loading.classList.remove('d-none');
-                initialMessage.classList.remove('d-none');
-                initialMessage.textContent = "Chargement de l'emploi du temps...";
+                // Select Schedule container and replace with spinner
+                scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
+                    <div class="spinner-border text-primary" id="loading" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p id="initial-message">Chargement de l'emploi du temps...</p>
+                </div>`;
                 
                 // Format date for URL: DD-MM-YYYY
                 const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
