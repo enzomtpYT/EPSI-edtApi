@@ -45,8 +45,8 @@
             </div>
         </div>
 
-        <div class="alert alert-info mt-3" role="alert">
-            Semaine du {{ week.start }} au {{ week.end }}
+        <div class="alert alert-info mt-3" id="selectedWeek" role="alert">
+            Semaine du...
         </div>
         
         <!-- Mobile day tabs navigation (hidden on larger screens) -->
@@ -90,6 +90,9 @@
             
             // Set current Monday as default
             weekDate.value = formatDateForInput(currentMondayDate);
+            
+            // Update selected week text
+            updateSelectedWeekText(currentMondayDate);
             
             // Check for window resize to toggle between mobile and desktop views
             window.addEventListener('resize', function() {
@@ -160,6 +163,19 @@
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
+            }
+            
+            // Update the selected week text
+            function updateSelectedWeekText(mondayDate) {
+                const monday = new Date(mondayDate);
+                const friday = new Date(mondayDate);
+                friday.setDate(monday.getDate() + 4); // Set to Friday (Monday + 4 days)
+                
+                const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                const mondayFormatted = monday.toLocaleDateString('fr-FR', options);
+                const fridayFormatted = friday.toLocaleDateString('fr-FR', options);
+                
+                document.getElementById('selectedWeek').textContent = `Semaine du ${mondayFormatted} au ${fridayFormatted}`;
             }
             
             // Save new user ID
@@ -241,6 +257,9 @@
                     </div>
                     <p id="initial-message">Chargement de l'emploi du temps...</p>
                 </div>`;
+                
+                // Update selected week text
+                updateSelectedWeekText(selectedDate);
                 
                 // Format date for URL: DD-MM-YYYY
                 const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;

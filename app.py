@@ -93,31 +93,7 @@ def add_cache_headers(response):
 
 @app.route('/', methods=['GET'])
 def get_schedule():
-    date = request.args.get('date')
-    
-    # For web interface
-    current_date = datetime.now().date()
-    
-    # If a date is provided, use that instead of current date
-    if date:
-        try:
-            current_date = parser.parse(date, dayfirst=True).date()
-        except:
-            pass
-    
-    # Calculate week start and end dates
-    weekday = current_date.weekday()
-    week_start = current_date - timedelta(days=weekday)
-    week_end = week_start + timedelta(days=6)
-    
-    # Format dates for display
-    formatted_week = {
-        "start": week_start.strftime("%d/%m/%Y"),
-        "end": week_end.strftime("%d/%m/%Y"),
-        "current": current_date.strftime("%d/%m/%Y")
-    }
-    
-    return render_template('index.html', week=formatted_week)
+    return render_template('index.html')
 
 @app.route('/<date>', methods=['GET'])
 def get_schedule_by_date(date):
