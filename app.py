@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import requests
 from bs4 import BeautifulSoup
+import os
 
 app = Flask(__name__)
 
 # Cache duration in seconds (2 hours)
-CACHE_DURATION = 7200
+CACHE_DURATION = int(os.getenv('CACHE_DURATION', 7200))
 
 class EdtElement:
     def __init__(self, name=None, room=None, teacher=None, date=None, start_time=None, end_time=None):
