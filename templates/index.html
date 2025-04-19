@@ -14,6 +14,11 @@
         <i id="themeIcon" class="bi bi-sun-fill"></i>
     </button>
 
+    <!-- Language toggle button -->
+    <button id="langToggle" class="lang-toggle" aria-label="Toggle language">
+        <span id="langText">FR</span>
+    </button>
+
     <div class="container schedule-container">
         <h1 class="text-center mb-4">EPSI Emploi du temps</h1>
         
@@ -79,17 +84,67 @@
             const initialMessage = document.getElementById('initial-message');
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = document.getElementById('themeIcon');
+            const langToggle = document.getElementById('langToggle');
+            const langText = document.getElementById('langText');
             const prevWeekBtn = document.getElementById('prevWeekBtn');
             const nextWeekBtn = document.getElementById('nextWeekBtn');
+            
+            // Translation dictionaries
+            const translations = {
+                'fr': {
+                    'title': 'EPSI Emploi du temps',
+                    'welcome': 'Bienvenue',
+                    'userIdPrompt': 'Veuillez entrer votre identifiant utilisateur pour continuer.',
+                    'enterUserId': 'Entrez votre ID',
+                    'save': 'Enregistrer',
+                    'prevWeek': 'Semaine précédente',
+                    'nextWeek': 'Semaine suivante',
+                    'changeUser': 'Changer d\'utilisateur',
+                    'weekOf': 'Semaine du',
+                    'to': 'au',
+                    'loading': 'Chargement de l\'emploi du temps...',
+                    'enterIdToShow': 'Veuillez entrer votre identifiant pour afficher l\'emploi du temps',
+                    'errorFetching': 'Erreur lors de la récupération de l\'emploi du temps. Veuillez réessayer.',
+                    'noClass': 'Aucun cours prévu',
+                    'days': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
+                    'room': 'Salle non spécifiée',
+                    'teacher': 'Enseignant non spécifié',
+                    'untitled': 'Sans titre'
+                },
+                'en': {
+                    'title': 'EPSI Schedule',
+                    'welcome': 'Welcome',
+                    'userIdPrompt': 'Please enter your user ID to continue.',
+                    'enterUserId': 'Enter your ID',
+                    'save': 'Save',
+                    'prevWeek': 'Previous week',
+                    'nextWeek': 'Next week',
+                    'changeUser': 'Change user',
+                    'weekOf': 'Week of',
+                    'to': 'to',
+                    'loading': 'Loading schedule...',
+                    'enterIdToShow': 'Please enter your ID to display the schedule',
+                    'errorFetching': 'Error fetching schedule data. Please try again.',
+                    'noClass': 'No classes scheduled',
+                    'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                    'room': 'Room not specified',
+                    'teacher': 'Teacher not specified',
+                    'untitled': 'Untitled'
+                }
+            };
             
             // Variables for mobile view and week navigation
             let activeDayIndex = 0;
             let currentScheduleData = null;
             let isMobileView = window.innerWidth < 768;
             let currentMondayDate = getMondayOfCurrentWeek();
+            let currentLanguage = localStorage.getItem('edtLanguage') || 'fr';
             
             // Set current Monday as default
             weekDate.value = formatDateForInput(currentMondayDate);
+            
+            // Apply language
+            applyLanguage();
             
             // Update selected week text
             updateSelectedWeekText(currentMondayDate);
@@ -105,6 +160,59 @@
                 }
             });
             
+            // Language toggle functionality
+            langToggle.addEventListener('click', function() {
+                toggleLanguage();
+            });
+            
+            function toggleLanguage() {
+                currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+                localStorage.setItem('edtLanguage', currentLanguage);
+                langText.textContent = currentLanguage.toUpperCase();
+                applyLanguage();
+                
+                // Refresh the display if we have schedule data
+                if (currentScheduleData) {
+                    displaySchedule(currentScheduleData, currentMondayDate);
+                }
+                
+                // Update selected week text with new language
+                updateSelectedWeekText(currentMondayDate);
+            }
+            
+            function applyLanguage() {
+                // Set the HTML lang attribute
+                document.documentElement.setAttribute('lang', currentLanguage);
+                
+                // Update the button text
+                langText.textContent = currentLanguage.toUpperCase();
+                
+                // Update page title
+                document.title = translations[currentLanguage].title;
+                document.querySelector('h1').textContent = translations[currentLanguage].title;
+                
+                // Update welcome text if visible
+                if (!userIdContainer.classList.contains('d-none')) {
+                    userIdContainer.querySelector('.card-title').textContent = translations[currentLanguage].welcome;
+                    userIdContainer.querySelector('.card-text').textContent = translations[currentLanguage].userIdPrompt;
+                    newUserId.placeholder = translations[currentLanguage].enterUserId;
+                    saveUserId.textContent = translations[currentLanguage].save;
+                }
+                
+                // Update buttons
+                prevWeekBtn.innerHTML = `<i class="bi bi-arrow-left"></i> ${translations[currentLanguage].prevWeek}`;
+                nextWeekBtn.innerHTML = `${translations[currentLanguage].nextWeek} <i class="bi bi-arrow-right"></i>`;
+                changeUserId.textContent = translations[currentLanguage].changeUser;
+                
+                // Update initial message if visible
+                if (!initialMessage.classList.contains('d-none')) {
+                    initialMessage.textContent = translations[currentLanguage].loading;
+                }
+                
+                // Update selected week text
+                updateSelectedWeekText(currentMondayDate);
+            }
+            
             // Check if user ID is stored in localStorage
             const savedUserId = localStorage.getItem('edtUserId');
             
@@ -114,7 +222,7 @@
             } else {
                 // No user ID, show the input form
                 userIdContainer.classList.remove('d-none');
-                initialMessage.textContent = "Veuillez entrer votre identifiant pour afficher l'emploi du temps";
+                initialMessage.textContent = translations[currentLanguage].enterIdToShow;
             }
             
             // Week navigation - Previous week
@@ -172,17 +280,18 @@
                 friday.setDate(monday.getDate() + 4); // Set to Friday (Monday + 4 days)
                 
                 const options = { day: 'numeric', month: 'long', year: 'numeric' };
-                const mondayFormatted = monday.toLocaleDateString('fr-FR', options);
-                const fridayFormatted = friday.toLocaleDateString('fr-FR', options);
+                const locale = currentLanguage === 'fr' ? 'fr-FR' : 'en-US';
+                const mondayFormatted = monday.toLocaleDateString(locale, options);
+                const fridayFormatted = friday.toLocaleDateString(locale, options);
                 
-                document.getElementById('selectedWeek').textContent = `Semaine du ${mondayFormatted} au ${fridayFormatted}`;
+                document.getElementById('selectedWeek').textContent = `${translations[currentLanguage].weekOf} ${mondayFormatted} ${translations[currentLanguage].to} ${fridayFormatted}`;
             }
             
             // Save new user ID
             saveUserId.addEventListener('click', function() {
                 const userId = newUserId.value.trim();
                 if (!userId) {
-                    alert("Veuillez entrer votre identifiant utilisateur.");
+                    alert(translations[currentLanguage].userIdPrompt);
                     return;
                 }
                 
@@ -253,9 +362,9 @@
                 // Select Schedule container and replace with spinner
                 scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
                     <div class="spinner-border text-primary" id="loading" role="status">
-                        <span class="visually-hidden">Chargement...</span>
+                        <span class="visually-hidden">${translations[currentLanguage].loading}</span>
                     </div>
-                    <p id="initial-message">Chargement de l'emploi du temps...</p>
+                    <p id="initial-message">${translations[currentLanguage].loading}</p>
                 </div>`;
                 
                 // Update selected week text
@@ -287,7 +396,7 @@
                     scheduleContainer.innerHTML = `
                         <div class="col-12">
                             <div class="alert alert-danger" role="alert">
-                                Erreur lors de la récupération de l'emploi du temps. Veuillez réessayer.
+                                ${translations[currentLanguage].errorFetching}
                             </div>
                         </div>
                     `;
@@ -307,7 +416,7 @@
                 monday.setDate(monday.getDate() - (selectedDay - 1));
                 
                 // Create days of the week
-                const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+                const days = translations[currentLanguage].days;
                 const datesOfWeek = [];
                 const visibleDays = [];
                 
@@ -363,7 +472,8 @@
                 // Create columns for each day
                 days.forEach((day, index) => {
                     const date = datesOfWeek[index];
-                    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+                    const locale = currentLanguage === 'fr' ? 'fr-FR' : 'en-GB';
+                    const formattedDate = date.toLocaleDateString(locale, {day: '2-digit', month: '2-digit', year: 'numeric'});
                     
                     // Create column for day
                     const dayColumn = document.createElement('div');
@@ -397,17 +507,28 @@
                         sortedItems.forEach(item => {
                             const scheduleItem = document.createElement('div');
                             scheduleItem.className = 'schedule-item';
+                            
+                            // Format time based on selected language
+                            let startTime = item.start_time || '??:??';
+                            let endTime = item.end_time || '??:??';
+                            
+                            if (currentLanguage === 'en') {
+                                // Convert to 12-hour AM/PM format for English
+                                startTime = convertTo12HourFormat(startTime);
+                                endTime = convertTo12HourFormat(endTime);
+                            }
+                            
                             scheduleItem.innerHTML = `
-                                <div class="time">${item.start_time || '??:??'} - ${item.end_time || '??:??'}</div>
-                                <div class="name fw-bold">${item.name || 'Sans titre'}</div>
-                                <div class="room">${item.room || 'Salle non spécifiée'}</div>
-                                <div class="teacher">${item.teacher || 'Enseignant non spécifié'}</div>
+                                <div class="time">${startTime} - ${endTime}</div>
+                                <div class="name fw-bold">${item.name || translations[currentLanguage].untitled}</div>
+                                <div class="room">${item.room || translations[currentLanguage].room}</div>
+                                <div class="teacher">${item.teacher || translations[currentLanguage].teacher}</div>
                             `;
                             daySchedule.appendChild(scheduleItem);
                         });
                     } else {
                         // No schedule items for this day
-                        daySchedule.innerHTML = '<div class="empty-day">Aucun cours prévu</div>';
+                        daySchedule.innerHTML = `<div class="empty-day">${translations[currentLanguage].noClass}</div>`;
                     }
                 });
                 
@@ -431,6 +552,21 @@
                 if (activeColumn) {
                     activeColumn.style.display = 'block';
                 }
+            }
+            
+            // Convert 24-hour format time to AM/PM format
+            function convertTo12HourFormat(time24) {
+                if (!time24 || time24 === '??:??') return time24;
+                
+                const [hours, minutes] = time24.split(':');
+                const hour = parseInt(hours, 10);
+                
+                if (isNaN(hour)) return time24;
+                
+                const period = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+                
+                return `${hour12}:${minutes} ${period}`;
             }
         });
     </script>
