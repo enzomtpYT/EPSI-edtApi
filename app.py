@@ -1,10 +1,13 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, make_response
 from datetime import datetime, timedelta
 from dateutil import parser
 import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
+
+# Cache duration in seconds (2 hours)
+CACHE_DURATION = 7200
 
 class EdtElement:
     def __init__(self, name=None, room=None, teacher=None, date=None, start_time=None, end_time=None):
@@ -82,6 +85,11 @@ def get_edt_elements(begin_date, end_date, user):
         results.append(get_day(date, user))
     return results
 
+def add_cache_headers(response):
+    """Add cache control headers for Cloudflare caching"""
+    response.headers['Cache-Control'] = f'public, max-age={CACHE_DURATION}'
+    return response
+
 @app.route('/', methods=['GET'])
 def get_schedule():
     date = request.args.get('date')
@@ -123,7 +131,10 @@ def get_schedule_by_date(date):
         
         # Convert results to JSON format
         schedule_data = [element.to_dict() for element in results]
-        return jsonify(schedule_data)
+        
+        # Create response with cache headers
+        response = make_response(jsonify(schedule_data))
+        return add_cache_headers(response)
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -153,8 +164,10 @@ def get_schedule_by_week(date):
             for element in day:
                 day_data.append(element.to_dict())
             schedule_data.append(day_data)
-            
-        return jsonify(schedule_data)
+        
+        # Create response with cache headers
+        response = make_response(jsonify(schedule_data))
+        return add_cache_headers(response)
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
