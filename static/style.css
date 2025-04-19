@@ -1,7 +1,12 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 html,
 body {
   font-family: "Helvetica", sans-serif;
-  padding-top: 20px;
   transition: all 0.3s ease;
 }
 
@@ -40,10 +45,6 @@ body {
   font-style: italic;
 }
 
-.date-nav {
-  margin-bottom: 20px;
-}
-
 .user-form {
   margin-bottom: 20px;
 }
@@ -62,10 +63,6 @@ body {
   font-style: italic;
   text-align: center;
   padding: 20px;
-}
-
-.user-id-container {
-  margin-bottom: 20px;
 }
 
 .btn-primary {
@@ -108,6 +105,10 @@ body {
   background-color: #343a40;
   border-color: #495057;
   color: #f8f9fa;
+}
+
+.dark-mode #newUserId::placeholder {
+  color: #adb5bd;
 }
 
 .dark-mode .fw-bold {
@@ -187,7 +188,6 @@ body {
     min-height: auto;
     margin-bottom: 30px;
     border-right: none;
-    border-bottom: 1px solid #eee;
     padding-bottom: 20px;
   }
 

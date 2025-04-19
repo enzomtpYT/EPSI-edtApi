@@ -34,26 +34,14 @@
         <!-- Week selector with navigation buttons -->
         <div class="user-form">
             <input type="hidden" id="weekDate">
-            <div class="row g-3">
-                <div class="col-md-4 col-sm-12 d-flex align-items-end">
-                    <button class="btn btn-outline-secondary" id="prevWeekBtn">
-                        <i class="bi bi-arrow-left"></i> Semaine précédente
-                    </button>
-                </div>
-                <div class="col-md-4 col-sm-12">
-                    <label for="currentUserId" class="form-label">Utilisateur</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="currentUserId" readonly>
-                        <button class="btn btn-outline-secondary" type="button" id="changeUserId">Changer</button>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-12 d-flex align-items-end">
-                    <div class="d-flex justify-content-end w-100">
-                        <button class="btn btn-outline-secondary" id="nextWeekBtn">
-                            Semaine suivante <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
+            <div class="col-md-4 col-sm-12 d-flex align-items-end w-100">
+                <button class="btn btn-outline-secondary" id="prevWeekBtn">
+                    <i class="bi bi-arrow-left"></i> Semaine précédente
+                </button>
+                <button class="btn btn-outline-secondary ms-auto" type="button" id="changeUserId">Changer d'utilisateur</button>
+                <button class="btn btn-outline-secondary ms-auto" id="nextWeekBtn">
+                    Semaine suivante <i class="bi bi-arrow-right"></i>
+                </button>
             </div>
         </div>
 
@@ -83,7 +71,6 @@
             const userIdContainer = document.getElementById('userIdContainer');
             const newUserId = document.getElementById('newUserId');
             const saveUserId = document.getElementById('saveUserId');
-            const currentUserId = document.getElementById('currentUserId');
             const changeUserId = document.getElementById('changeUserId');
             const weekDate = document.getElementById('weekDate');
             const scheduleContainer = document.getElementById('scheduleContainer');
@@ -120,7 +107,6 @@
             
             if (savedUserId) {
                 // User ID exists, display it and load schedule
-                currentUserId.value = savedUserId;
                 loadSchedule(savedUserId, currentMondayDate);
             } else {
                 // No user ID, show the input form
@@ -186,7 +172,6 @@
                 
                 // Save to localStorage
                 localStorage.setItem('edtUserId', userId);
-                currentUserId.value = userId;
                 
                 // Hide user ID container
                 userIdContainer.classList.add('d-none');
@@ -198,7 +183,6 @@
             // Change user ID
             changeUserId.addEventListener('click', function() {
                 userIdContainer.classList.remove('d-none');
-                newUserId.value = currentUserId.value;
                 newUserId.focus();
             });
             
@@ -417,7 +401,7 @@
                     }
                     
                     dayColumn.innerHTML = `
-                        <h5 class="text-center mb-3">${day} ${formattedDate}</h5>
+                        <h5 class="text-center text-nowrap mb-3">${day} ${formattedDate}</h5>
                         <div id="day-${index}" class="day-schedule"></div>
                     `;
                     scheduleContainer.appendChild(dayColumn);
