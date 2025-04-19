@@ -31,12 +31,14 @@
             </div>
         </div>
         
-        <!-- Week selector -->
+        <!-- Week selector with navigation buttons -->
         <div class="user-form">
+            <input type="hidden" id="weekDate">
             <div class="row g-3">
-                <div class="col-md-4 col-sm-12">
-                    <label for="weekDate" class="form-label">Semaine du</label>
-                    <input type="date" class="form-control" id="weekDate">
+                <div class="col-md-4 col-sm-12 d-flex align-items-end">
+                    <button class="btn btn-outline-secondary" id="prevWeekBtn">
+                        <i class="bi bi-arrow-left"></i> Semaine précédente
+                    </button>
                 </div>
                 <div class="col-md-4 col-sm-12">
                     <label for="currentUserId" class="form-label">Utilisateur</label>
@@ -46,7 +48,11 @@
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-12 d-flex align-items-end">
-                    <button type="button" class="btn btn-primary w-100" id="refreshBtn">Actualiser l'emploi du temps</button>
+                    <div class="d-flex justify-content-end w-100">
+                        <button class="btn btn-outline-secondary" id="nextWeekBtn">
+                            Semaine suivante <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,11 +93,17 @@
             const initialMessage = document.getElementById('initial-message');
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = document.getElementById('themeIcon');
+            const prevWeekBtn = document.getElementById('prevWeekBtn');
+            const nextWeekBtn = document.getElementById('nextWeekBtn');
             
-            // Variables for mobile view
+            // Variables for mobile view and week navigation
             let activeDayIndex = 0;
             let currentScheduleData = null;
             let isMobileView = window.innerWidth < 768;
+            let currentMondayDate = getMondayOfCurrentWeek();
+            
+            // Set current Monday as default
+            weekDate.value = formatDateForInput(currentMondayDate);
             
             // Check for window resize to toggle between mobile and desktop views
             window.addEventListener('resize', function() {
@@ -99,15 +111,10 @@
                 if (newIsMobileView !== isMobileView) {
                     isMobileView = newIsMobileView;
                     if (currentScheduleData) {
-                        displaySchedule(currentScheduleData, new Date(weekDate.value));
+                        displaySchedule(currentScheduleData, currentMondayDate);
                     }
                 }
             });
-            
-            // Set current date as default
-            const today = new Date();
-            const formattedDate = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-            weekDate.value = formattedDate;
             
             // Check if user ID is stored in localStorage
             const savedUserId = localStorage.getItem('edtUserId');
@@ -115,11 +122,59 @@
             if (savedUserId) {
                 // User ID exists, display it and load schedule
                 currentUserId.value = savedUserId;
-                loadSchedule(savedUserId, new Date(weekDate.value));
+                loadSchedule(savedUserId, currentMondayDate);
             } else {
                 // No user ID, show the input form
                 userIdContainer.classList.remove('d-none');
                 initialMessage.textContent = "Veuillez entrer votre identifiant pour afficher l'emploi du temps";
+            }
+            
+            // Week navigation - Previous week
+            prevWeekBtn.addEventListener('click', function() {
+                const prevMonday = new Date(currentMondayDate);
+                prevMonday.setDate(prevMonday.getDate() - 7);
+                
+                currentMondayDate = prevMonday;
+                weekDate.value = formatDateForInput(currentMondayDate);
+                
+                const userId = localStorage.getItem('edtUserId');
+                if (userId) {
+                    loadSchedule(userId, currentMondayDate);
+                }
+            });
+            
+            // Week navigation - Next week
+            nextWeekBtn.addEventListener('click', function() {
+                const nextMonday = new Date(currentMondayDate);
+                nextMonday.setDate(nextMonday.getDate() + 7);
+                
+                currentMondayDate = nextMonday;
+                weekDate.value = formatDateForInput(currentMondayDate);
+                
+                const userId = localStorage.getItem('edtUserId');
+                if (userId) {
+                    loadSchedule(userId, currentMondayDate);
+                }
+            });
+            
+            // Helper function to get Monday of current week
+            function getMondayOfCurrentWeek() {
+                const today = new Date();
+                const day = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+                
+                const monday = new Date(today);
+                monday.setDate(diff);
+                monday.setHours(0, 0, 0, 0);
+                return monday;
+            }
+            
+            // Format a date object to YYYY-MM-DD for input value
+            function formatDateForInput(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
             }
             
             // Save new user ID
@@ -138,7 +193,7 @@
                 userIdContainer.classList.add('d-none');
                 
                 // Load schedule
-                loadSchedule(userId, new Date(weekDate.value));
+                loadSchedule(userId, currentMondayDate);
             });
             
             // Change user ID
@@ -157,15 +212,7 @@
                     return;
                 }
                 
-                loadSchedule(userId, new Date(weekDate.value));
-            });
-            
-            // Date change event
-            weekDate.addEventListener('change', function() {
-                const userId = localStorage.getItem('edtUserId');
-                if (userId) {
-                    loadSchedule(userId, new Date(weekDate.value));
-                }
+                loadSchedule(userId, currentMondayDate);
             });
             
             // Theme toggle functionality
@@ -221,10 +268,10 @@
                 initialMessage.classList.remove('d-none');
                 initialMessage.textContent = "Chargement de l'emploi du temps...";
                 
-                // Format date for URL
+                // Format date for URL: DD-MM-YYYY
                 const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
                 
-                // Fetch schedule data
+                // Fetch schedule data for the week containing the selected date
                 fetch(`/week/${formattedDate}?user=${userId}`, {
                     headers: {
                         'Accept': 'application/json'

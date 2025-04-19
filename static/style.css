@@ -48,6 +48,15 @@ body {
   margin-bottom: 20px;
 }
 
+/* Week navigation buttons styling */
+.week-navigation #prevWeekBtn {
+  margin-right: auto;
+}
+
+.week-navigation #nextWeekBtn {
+  margin-left: auto;
+}
+
 .empty-day {
   color: #6c757d;
   font-style: italic;
@@ -130,6 +139,17 @@ body {
 
 .dark-mode .empty-day {
   color: #adb5bd;
+}
+
+/* Dark mode for week navigation */
+.dark-mode .btn-outline-secondary {
+  color: #adb5bd;
+  border-color: #495057;
+}
+
+.dark-mode .btn-outline-secondary:hover {
+  background-color: #495057;
+  color: #f8f9fa;
 }
 
 /* Theme toggle button */
