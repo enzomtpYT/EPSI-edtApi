@@ -4,6 +4,7 @@ import logging
 import time
 from flask import request
 from datetime import datetime
+import os
 
 # Configure logging
 logging.basicConfig(
@@ -12,6 +13,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
+
+# Get thread count from environment or use a reasonable default
+# More threads help with handling concurrent requests
+THREAD_COUNT = int(os.getenv('WAITRESS_THREADS', 8))
 
 # Request logging middleware
 @app.before_request
@@ -43,5 +48,5 @@ def log_request(response):
     return response
 
 if __name__ == '__main__':
-    print("Starting Waitress server with verbose logging...")
-    serve(app, host='0.0.0.0', port=5000, threads=4, _quiet=False) 
+    print(f"Starting Waitress server with {THREAD_COUNT} threads...")
+    serve(app, host='0.0.0.0', port=5000, threads=THREAD_COUNT, _quiet=False)

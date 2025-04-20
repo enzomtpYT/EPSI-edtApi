@@ -4,11 +4,38 @@ from dateutil import parser
 import requests
 from bs4 import BeautifulSoup
 import os
+import concurrent.futures
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 app = Flask(__name__)
 
 # Cache duration in seconds (2 hours)
 CACHE_DURATION = int(os.getenv('CACHE_DURATION', 7200))
+
+# Configure session for connection pooling and retry strategy
+def create_session():
+    session = requests.Session()
+    
+    # Configure retry strategy
+    retry_strategy = Retry(
+        total=3,  # Maximum number of retries
+        backoff_factor=0.5,  # Backoff factor for retries
+        status_forcelist=[429, 500, 502, 503, 504],  # Status codes to retry on
+    )
+    
+    # Mount the adapter with the retry strategy for both http and https
+    adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    
+    return session
+
+# Global session object for connection pooling
+http_session = create_session()
+
+# Maximum number of workers for parallel requests
+MAX_WORKERS = 5
 
 class EdtElement:
     def __init__(self, name=None, room=None, teacher=None, date=None, start_time=None, end_time=None):
@@ -34,14 +61,19 @@ def get_day(search_date, search_user):
     url = f"https://edtmobiliteng.wigorservices.net/WebPsDyn.aspx?Action=posETUD&serverid=C&Tel={search_user}&date={query_date}%208:00"
     
     try:
-        response = requests.get(url)
+        # Use the global session for connection pooling
+        response = http_session.get(url, timeout=10)
         if response.status_code != 200:
             raise Exception(f"Failed to fetch schedule: {response.status_code}")
         
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # Use lxml parser for better performance
+        soup = BeautifulSoup(response.text, 'lxml')
         edt_elements = []
         
-        for line in soup.find_all('div', class_='Ligne'):
+        # Find all elements with one query to improve performance
+        lines = soup.find_all('div', class_='Ligne')
+        
+        for line in lines:
             name = line.find('div', class_='Matiere')
             room = line.find('div', class_='Salle')
             teacher = line.find('div', class_='Prof')
@@ -81,9 +113,29 @@ def get_edt_elements(begin_date, end_date, user):
             dates.append(current_date)
         current_date += timedelta(days=1)
     
-    results = []
-    for date in dates:
-        results.append(get_day(date, user))
+    results = [None] * len(dates)  # Pre-allocate results list
+    
+    # Use ThreadPoolExecutor for parallel requests
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(dates))) as executor:
+        # Submit all tasks
+        future_to_date = {executor.submit(get_day, date, user): i for i, date in enumerate(dates)}
+        
+        # Process results as they complete
+        for future in concurrent.futures.as_completed(future_to_date):
+            date_index = future_to_date[future]
+            try:
+                results[date_index] = future.result()
+            except Exception as e:
+                # Handle any exceptions that might have occurred
+                results[date_index] = [EdtElement(
+                    name="Erreur lors du traitement de l'emploi du temps",
+                    room="ERROR002",
+                    date=dates[date_index],
+                    teacher=str(e),
+                    start_time="00:00",
+                    end_time="23:59"
+                )]
+    
     return results
 
 def add_cache_headers(response):
