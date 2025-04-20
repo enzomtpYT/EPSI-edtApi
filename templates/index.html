@@ -43,7 +43,12 @@
                 <button class="btn btn-outline-secondary" id="prevWeekBtn">
                     <i class="bi bi-arrow-left"></i> Semaine précédente
                 </button>
-                <button class="btn btn-outline-secondary ms-auto" type="button" id="changeUserId">Changer d'utilisateur</button>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-secondary" id="refreshBtn" title="No cache">
+                        <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline" id="refreshBtnText">Actualiser</span>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" id="changeUserId">Changer d'utilisateur</button>
+                </div>
                 <button class="btn btn-outline-secondary ms-auto" id="nextWeekBtn">
                     Semaine suivante <i class="bi bi-arrow-right"></i>
                 </button>
@@ -100,6 +105,7 @@
                     'prevWeek': 'Semaine précédente',
                     'nextWeek': 'Semaine suivante',
                     'changeUser': 'Changer d\'utilisateur',
+                    'refresh': 'Actualiser',
                     'weekOf': 'Semaine du',
                     'to': 'au',
                     'loading': 'Chargement de l\'emploi du temps...',
@@ -120,6 +126,7 @@
                     'prevWeek': 'Previous week',
                     'nextWeek': 'Next week',
                     'changeUser': 'Change user',
+                    'refresh': 'Refresh',
                     'weekOf': 'Week of',
                     'to': 'to',
                     'loading': 'Loading schedule...',
@@ -203,6 +210,7 @@
                 prevWeekBtn.innerHTML = `<i class="bi bi-arrow-left"></i> ${translations[currentLanguage].prevWeek}`;
                 nextWeekBtn.innerHTML = `${translations[currentLanguage].nextWeek} <i class="bi bi-arrow-right"></i>`;
                 changeUserId.textContent = translations[currentLanguage].changeUser;
+                document.getElementById('refreshBtnText').textContent = translations[currentLanguage].refresh;
                 
                 // Update initial message if visible
                 if (!initialMessage.classList.contains('d-none')) {
@@ -253,6 +261,68 @@
                 }
             });
             
+            // Add functionality for refresh button (no cache)
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                const userId = localStorage.getItem('edtUserId');
+                if (userId) {
+                    // Add a timestamp to prevent caching
+                    loadScheduleNoCache(userId, currentMondayDate);
+                }
+            });
+            
+            function loadScheduleNoCache(userId, selectedDate) {
+                // Select Schedule container and replace with spinner
+                scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
+                    <div class="spinner-border text-primary" id="loading" role="status">
+                        <span class="visually-hidden">${translations[currentLanguage].loading}</span>
+                    </div>
+                    <p id="initial-message">${translations[currentLanguage].loading}</p>
+                </div>`;
+                
+                // Update selected week text
+                updateSelectedWeekText(selectedDate);
+                
+                // Format date for URL: DD-MM-YYYY
+                const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
+                
+                // Add timestamp to URL to bypass cache
+                const timestamp = new Date().getTime();
+                
+                // Fetch schedule data for the week containing the selected date
+                fetch(`/week/${formattedDate}?user=${userId}&_=${timestamp}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    currentScheduleData = data;
+                    displaySchedule(data, selectedDate);
+                    loading.classList.add('d-none');
+                    initialMessage.classList.add('d-none');
+                })
+                .catch(error => {
+                    console.error('Error fetching schedule data:', error);
+                    scheduleContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger" role="alert">
+                                ${translations[currentLanguage].errorFetching}
+                            </div>
+                        </div>
+                    `;
+                    loading.classList.add('d-none');
+                    initialMessage.classList.add('d-none');
+                });
+            }
+
             // Helper function to get Monday of current week
             function getMondayOfCurrentWeek() {
                 const today = new Date();
