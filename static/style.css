@@ -248,8 +248,8 @@ body {
   /* Flex layout for content */
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Distribute space */
-  gap: 0;
+  justify-content: flex-start;
+  gap: 1px;
 }
 
 .schedule-item:hover {
@@ -259,55 +259,65 @@ body {
   filter: brightness(1.1);
 }
 
-/* Priority Elements: Don't Shrink */
+/* Header Row: Time + Room */
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0; /* Never shrink the header */
+  line-height: 1.2;
+  min-width: 0; /* Allow children truncation */
+}
+
 .schedule-item .time {
   font-size: 0.75rem;
   color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
-  line-height: 1.2;
 }
 
 .schedule-item .room {
   font-size: 0.75rem;
   color: var(--success-color);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  flex-shrink: 1; /* Truncate room if header is too tight */
+  text-align: right;
 }
 
+/* Name: High Priority */
+.schedule-item .name {
+  font-weight: 600;
+  line-height: 1.1;
+  font-size: 0.8rem;
+  margin-top: 1px;
+  
+  /* Priorities */
+  flex-shrink: 0; /* Don't let name disappear easily */
+  
+  /* Truncation logic */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* Teacher: Low Priority (Can disappear) */
 .schedule-item .teacher {
   font-size: 0.75rem;
   font-style: italic;
   color: var(--text-secondary);
   white-space: nowrap;
-  flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
-}
-
-/* Flexible Element: Name */
-.schedule-item .name {
-  font-weight: 600;
-  line-height: 1.1;
-  font-size: 0.8rem;
-  
-  /* Flex properties to take space but respect boundaries */
-  flex-grow: 1;
-  flex-shrink: 1;
-  min-height: 0; /* Crucial for text truncation in flex */
-  
-  /* Truncation logic */
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* Limit to 2 lines */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
+  flex-shrink: 1; /* Shrink/disappear first */
+  min-height: 0;
 }
 
 /* Empty States */
@@ -549,12 +559,12 @@ body {
 /* Responsive Design */
 @media (max-width: 768px) {
   .schedule-grid {
-    display: block; /* Stack items logic (though only one shows) */
+    display: block; /* Stack items */
   }
 
   .day-column {
-    display: none;
-    height: 100%; /* Full height of container */
+    margin-bottom: var(--spacing-md);
+    display: none; /* Hidden by default, toggled by JS */
   }
 
   .day-column.active {
@@ -565,19 +575,36 @@ body {
     display: flex;
   }
 
+  /* Optimized Mobile Toolbar */
   .controls-toolbar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    justify-content: flex-start;
-    padding-bottom: 8px; /* For scrollbar if needed */
+    flex-wrap: nowrap; /* Keep on one line */
+    justify-content: space-between;
+    overflow-x: visible; /* Remove scroll */
+    padding: 8px;
+    gap: 6px; /* consistent small gap */
   }
   
   .nav-btn {
-    min-width: auto;
-    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    min-width: 40px;
+    flex: 1; /* Distribute space evenly */
+    padding: 10px 0; /* Vertical padding for touch target */
   }
   
-  .header {
+  /* Hide text labels on mobile */
+  .btn-text {
+    display: none;
+  }
+  
+  /* Larger icons for touch */
+  .nav-btn i {
+    font-size: 1.25rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+    padding-right: 80px; /* Make space for toggles */
     text-align: left;
   }
 }

@@ -800,9 +800,11 @@
               let durationText = durationHours > 0 ? (durationMinutes > 0 ? `${durationHours}h${durationMinutes}m` : `${durationHours}h`) : `${durationMinutes}m`;
 
               scheduleItem.innerHTML = `
-                <div class="time">${startTime} - ${endTime} (${durationText})</div>
+                <div class="item-header">
+                  <span class="time">${startTime} - ${endTime}</span>
+                  <span class="room" title="${block.data.room || ''}">${block.data.room || translations[currentLanguage].room}</span>
+                </div>
                 <div class="name" title="${block.data.name || ''}">${block.data.name || translations[currentLanguage].untitled}</div>
-                <div class="room" title="${block.data.room || ''}">${block.data.room || translations[currentLanguage].room}</div>
                 <div class="teacher" title="${block.data.teacher || ''}">${block.data.teacher || translations[currentLanguage].teacher}</div>
               `;
               container.appendChild(scheduleItem);
