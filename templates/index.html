@@ -980,10 +980,10 @@
               }
 
               scheduleItem.innerHTML = `
-                            <div class="time">${startTime} - ${endTime} (${durationText})</div>
-                            <div class="name fw-bold">${block.data.name || translations[currentLanguage].untitled}</div>
-                            <div class="room">${block.data.room || translations[currentLanguage].room}</div>
-                            <div class="teacher">${block.data.teacher || translations[currentLanguage].teacher}</div>
+                            <div class="time" title="${startTime} - ${endTime}">${startTime} - ${endTime} (${durationText})</div>
+                            <div class="name fw-bold" title="${block.data.name || ''}">${block.data.name || translations[currentLanguage].untitled}</div>
+                            <div class="room" title="${block.data.room || ''}">${block.data.room || translations[currentLanguage].room}</div>
+                            <div class="teacher" title="${block.data.teacher || ''}">${block.data.teacher || translations[currentLanguage].teacher}</div>
                         `;
               container.appendChild(scheduleItem);
             }

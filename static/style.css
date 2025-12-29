@@ -26,11 +26,32 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden;
+}
+
+.schedule-item .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
+}
+
+.schedule-item .time,
+.schedule-item .room,
+.schedule-item .teacher {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .schedule-item.proportional-item {
   margin-bottom: 2px;
   box-sizing: border-box;
+  padding: 4px 6px;
+  justify-content: flex-start;
 }
 
 .empty-time-block {
