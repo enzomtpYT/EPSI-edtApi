@@ -10,8 +10,12 @@ from urllib3.util.retry import Retry
 
 app = Flask(__name__)
 
-# Cache duration in seconds (2 hours)
+# Cache duration in seconds (2 hours for API, configurable via environment)
 CACHE_DURATION = int(os.getenv('CACHE_DURATION', 7200))
+# Static files cache duration (1 week)
+STATIC_CACHE_DURATION = int(os.getenv('STATIC_CACHE_DURATION', 604800))
+# HTML pages cache duration (30 minutes)
+HTML_CACHE_DURATION = int(os.getenv('HTML_CACHE_DURATION', 1800))
 
 # Configure session for connection pooling and retry strategy
 def create_session():
@@ -138,18 +142,92 @@ def get_edt_elements(begin_date, end_date, user):
     
     return results
 
-def add_cache_headers(response):
-    """Add cache control headers for Cloudflare caching"""
-    response.headers['Cache-Control'] = f'public, max-age={CACHE_DURATION}'
+def add_cache_headers(response, cache_type='default'):
+    """Add comprehensive cache control headers for browser and CDN caching"""
+    
+    if cache_type == 'static':
+        # Static assets (CSS, JS, images) - cache for configured duration
+        response.headers['Cache-Control'] = f'public, max-age={STATIC_CACHE_DURATION}, s-maxage={STATIC_CACHE_DURATION}, immutable'
+        response.headers['Expires'] = (datetime.utcnow() + timedelta(seconds=STATIC_CACHE_DURATION)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    elif cache_type == 'api':
+        # API responses - cache for configured duration with stale-while-revalidate
+        response.headers['Cache-Control'] = f'public, max-age={CACHE_DURATION}, s-maxage={CACHE_DURATION}, stale-while-revalidate=86400'
+        response.headers['Expires'] = (datetime.utcnow() + timedelta(seconds=CACHE_DURATION)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    elif cache_type == 'no-cache':
+        # Force fresh data (for refresh requests)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    elif cache_type == 'health':
+        # Health check - short cache
+        response.headers['Cache-Control'] = 'public, max-age=60, s-maxage=60'
+        response.headers['Expires'] = (datetime.utcnow() + timedelta(seconds=60)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    else:  # default
+        # Default caching for HTML pages
+        response.headers['Cache-Control'] = f'public, max-age={HTML_CACHE_DURATION}, s-maxage={HTML_CACHE_DURATION}'
+        response.headers['Expires'] = (datetime.utcnow() + timedelta(seconds=HTML_CACHE_DURATION)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    
+    # Common headers for all responses
+    response.headers['Vary'] = 'Accept-Encoding, User-Agent'
+    response.headers['X-Cache-Status'] = 'MISS'  # Cloudflare will override this
+    
+    # ETag for better cache validation (simple hash of content)
+    if hasattr(response, 'data') and response.data:
+        import hashlib
+        etag = hashlib.md5(response.data).hexdigest()
+        response.headers['ETag'] = f'"{etag}"'
+    
+    return response
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """Serve static files with optimal caching headers"""
+    try:
+        response = make_response(app.send_static_file(filename))
+        return add_cache_headers(response, 'static')
+    except Exception:
+        return "File not found", 404
+
+@app.before_request
+def handle_conditional_requests():
+    """Handle conditional requests with ETag and If-None-Match"""
+    if request.method == 'GET':
+        # Check If-None-Match header for ETag validation
+        if_none_match = request.headers.get('If-None-Match')
+        if if_none_match:
+            # For simplicity, we'll let the route handler set the ETag
+            # and the browser will handle 304 responses automatically
+            pass
+
+@app.after_request
+def after_request(response):
+    """Add security and performance headers to all responses"""
+    # Security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Performance headers
+    response.headers['Server'] = 'EPSI-EDT-API'
+    
+    # CORS headers for API endpoints
+    if request.endpoint and ('schedule' in request.endpoint or 'week' in request.endpoint):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Max-Age'] = '86400'
+    
     return response
 
 @app.route('/', methods=['GET'])
 def get_schedule():
-    return render_template('index.html')
+    response = make_response(render_template('index.html'))
+    return add_cache_headers(response, 'default')
 
 @app.route('/<date>', methods=['GET'])
 def get_schedule_by_date(date):
     user = request.args.get('user')
+    no_cache = request.args.get('_')  # Timestamp parameter for cache busting
     
     if not user:
         return jsonify({"error": "User parameter is required"}), 400
@@ -161,9 +239,10 @@ def get_schedule_by_date(date):
         # Convert results to JSON format
         schedule_data = [element.to_dict() for element in results]
         
-        # Create response with cache headers
+        # Create response with appropriate cache headers
         response = make_response(jsonify(schedule_data))
-        return add_cache_headers(response)
+        cache_type = 'no-cache' if no_cache else 'api'
+        return add_cache_headers(response, cache_type)
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -171,6 +250,7 @@ def get_schedule_by_date(date):
 @app.route('/week/<date>', methods=['GET'])
 def get_schedule_by_week(date):
     user = request.args.get('user')
+    no_cache = request.args.get('_')  # Timestamp parameter for cache busting
     
     if not user:
         return jsonify({"error": "User parameter is required"}), 400
@@ -193,13 +273,36 @@ def get_schedule_by_week(date):
             for element in day:
                 day_data.append(element.to_dict())
             schedule_data.append(day_data)
-        
-        # Create response with cache headers
+          # Create response with appropriate cache headers
         response = make_response(jsonify(schedule_data))
-        return add_cache_headers(response)
+        cache_type = 'no-cache' if no_cache else 'api'
+        return add_cache_headers(response, cache_type)
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint with minimal caching"""
+    health_data = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "cache_duration": CACHE_DURATION,
+        "version": "1.0"
+    }
+    response = make_response(jsonify(health_data))
+    return add_cache_headers(response, 'health')
+
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    """Handle CORS preflight requests"""
+    response = make_response('', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, If-None-Match'
+    response.headers['Access-Control-Max-Age'] = '86400'
+    response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)

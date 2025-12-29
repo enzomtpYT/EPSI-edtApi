@@ -1,644 +1,1026 @@
 <!DOCTYPE html>
 <html lang="fr" class="dark-mode">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EPSI Emploi du temps</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
     <!-- Theme toggle button -->
     <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-        <i id="themeIcon" class="bi bi-sun-fill"></i>
+      <i id="themeIcon" class="bi bi-sun-fill"></i>
     </button>
 
     <!-- Language toggle button -->
     <button id="langToggle" class="lang-toggle" aria-label="Toggle language">
-        <span id="langText">FR</span>
+      <span id="langText">FR</span>
     </button>
 
     <div class="container schedule-container">
-        <h1 class="text-center mb-4">EPSI Emploi du temps</h1>
-        
-        <!-- User ID input (only shown if not stored) -->
-        <div id="userIdContainer" class="user-id-container d-none">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Bienvenue</h5>
-                    <p class="card-text">Veuillez entrer votre identifiant utilisateur pour continuer.</p>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="newUserId" placeholder="Entrez votre identifiant">
-                        <button class="btn btn-primary" type="button" id="saveUserId">Enregistrer</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Week selector with navigation buttons -->
-        <div class="user-form">
-            <input type="hidden" id="weekDate">
-            <div class="col-md-4 col-sm-12 d-flex align-items-end w-100">
-                <button class="btn btn-outline-secondary" id="prevWeekBtn">
-                    <i class="bi bi-arrow-left"></i> Semaine précédente
-                </button>
-                <div class="ms-auto">
-                    <button class="btn btn-outline-secondary" id="refreshBtn" title="No cache">
-                        <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline" id="refreshBtnText">Actualiser</span>
-                    </button>
-                    <button class="btn btn-outline-secondary" type="button" id="changeUserId">Changer d'utilisateur</button>
-                </div>
-                <button class="btn btn-outline-secondary ms-auto" id="nextWeekBtn">
-                    Semaine suivante <i class="bi bi-arrow-right"></i>
-                </button>
-            </div>
-        </div>
+      <h1 class="text-center mb-4">EPSI Emploi du temps</h1>
 
-        <div class="alert alert-info mt-3" id="selectedWeek" role="alert">
-            Semaine du...
-        </div>
-        
-        <!-- Mobile day tabs navigation (hidden on larger screens) -->
-        <div class="d-md-none tab-navigation mb-3" id="daysTabs">
-            <!-- Day tabs will be inserted here by JS -->
-        </div>
-        
-        <div class="row" id="scheduleContainer">
-            <!-- Schedule will be loaded here -->
-            <div class="col-12 text-center my-5">
-                <div class="spinner-border text-primary d-none" id="loading" role="status">
-                    <span class="visually-hidden">Chargement...</span>
-                </div>
-                <p id="initial-message">Chargement de l'emploi du temps...</p>
+      <!-- User ID input (only shown if not stored) -->
+      <div id="userIdContainer" class="user-id-container d-none">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Bienvenue</h5>
+            <p class="card-text">Veuillez entrer votre identifiant utilisateur pour continuer.</p>
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" id="newUserId" placeholder="Entrez votre identifiant" />
+              <button class="btn btn-primary" type="button" id="saveUserId">Enregistrer</button>
             </div>
+          </div>
         </div>
+      </div>
+      <!-- Week selector with navigation buttons -->
+      <div class="user-form">
+        <input type="hidden" id="weekDate" />
+        <div class="button-row">
+          <button class="btn btn-outline-secondary nav-btn" id="prevWeekBtn">
+            <i class="bi bi-arrow-left"></i> <span class="btn-text">Semaine précédente</span>
+          </button>
+          <button class="btn btn-outline-secondary nav-btn" id="refreshBtn" title="No cache">
+            <i class="bi bi-arrow-clockwise"></i> <span class="btn-text" id="refreshBtnText">Actualiser</span>
+          </button>
+          <button class="btn btn-outline-secondary nav-btn" type="button" id="changeUserId">
+            <i class="bi bi-person-gear"></i> <span class="btn-text">Changer d'utilisateur</span>
+          </button>
+          <button class="btn btn-outline-secondary nav-btn" type="button" id="datePickerBtn">
+            <i class="bi bi-calendar3"></i> <span class="btn-text" id="datePickerBtnText">Choisir semaine</span>
+          </button>
+          <button class="btn btn-outline-secondary nav-btn" id="nextWeekBtn">
+            <span class="btn-text">Semaine suivante</span> <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Week Picker Modal -->
+      <div id="weekPickerModal" class="week-picker-modal" style="display: none">
+        <div class="week-picker-content">
+          <div class="week-picker-header">
+            <h5 id="weekPickerTitle">Choisir une semaine</h5>
+            <button type="button" class="week-picker-close" id="closeWeekPicker">&times;</button>
+          </div>
+          <div class="week-picker-body">
+            <div class="month-year-selector">
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="prevMonth">&lt;</button>
+              <span id="currentMonthYear">January 2025</span>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="nextMonth">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+              <!-- Calendar will be generated here -->
+            </div>
+            <div class="week-picker-footer">
+              <button type="button" class="btn btn-secondary" id="cancelWeekPicker">Annuler</button>
+              <button type="button" class="btn btn-primary" id="selectWeek" disabled>Sélectionner</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3" id="selectedWeek" role="alert">Semaine du...</div>
+
+      <!-- Mobile day tabs navigation (hidden on larger screens) -->
+      <div class="d-md-none tab-navigation mb-3" id="daysTabs">
+        <!-- Day tabs will be inserted here by JS -->
+      </div>
+
+      <div class="row" id="scheduleContainer">
+        <!-- Schedule will be loaded here -->
+        <div class="col-12 text-center my-5">
+          <div class="spinner-border text-primary d-none" id="loading" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p id="initial-message">Chargement de l'emploi du temps...</p>
+        </div>
+      </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM elements
-            const userIdContainer = document.getElementById('userIdContainer');
-            const newUserId = document.getElementById('newUserId');
-            const saveUserId = document.getElementById('saveUserId');
-            const changeUserId = document.getElementById('changeUserId');
-            const weekDate = document.getElementById('weekDate');
-            const scheduleContainer = document.getElementById('scheduleContainer');
-            const daysTabs = document.getElementById('daysTabs');
-            const loading = document.getElementById('loading');
-            const initialMessage = document.getElementById('initial-message');
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const langToggle = document.getElementById('langToggle');
-            const langText = document.getElementById('langText');
-            const prevWeekBtn = document.getElementById('prevWeekBtn');
-            const nextWeekBtn = document.getElementById('nextWeekBtn');
-            
-            // Translation dictionaries
-            const translations = {
-                'fr': {
-                    'title': 'EPSI Emploi du temps',
-                    'welcome': 'Bienvenue',
-                    'userIdPrompt': 'Veuillez entrer votre identifiant utilisateur pour continuer.',
-                    'enterUserId': 'Entrez votre ID',
-                    'save': 'Enregistrer',
-                    'prevWeek': 'Semaine précédente',
-                    'nextWeek': 'Semaine suivante',
-                    'changeUser': 'Changer d\'utilisateur',
-                    'refresh': 'Actualiser',
-                    'weekOf': 'Semaine du',
-                    'to': 'au',
-                    'loading': 'Chargement de l\'emploi du temps...',
-                    'enterIdToShow': 'Veuillez entrer votre identifiant pour afficher l\'emploi du temps',
-                    'errorFetching': 'Erreur lors de la récupération de l\'emploi du temps. Veuillez réessayer.',
-                    'noClass': 'Aucun cours prévu',
-                    'days': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
-                    'room': 'Salle non spécifiée',
-                    'teacher': 'Enseignant non spécifié',
-                    'untitled': 'Sans titre'
-                },
-                'en': {
-                    'title': 'EPSI Schedule',
-                    'welcome': 'Welcome',
-                    'userIdPrompt': 'Please enter your user ID to continue.',
-                    'enterUserId': 'Enter your ID',
-                    'save': 'Save',
-                    'prevWeek': 'Previous week',
-                    'nextWeek': 'Next week',
-                    'changeUser': 'Change user',
-                    'refresh': 'Refresh',
-                    'weekOf': 'Week of',
-                    'to': 'to',
-                    'loading': 'Loading schedule...',
-                    'enterIdToShow': 'Please enter your ID to display the schedule',
-                    'errorFetching': 'Error fetching schedule data. Please try again.',
-                    'noClass': 'No classes scheduled',
-                    'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                    'room': 'Room not specified',
-                    'teacher': 'Teacher not specified',
-                    'untitled': 'Untitled'
-                }
-            };
-            
-            // Variables for mobile view and week navigation
-            let activeDayIndex = 0;
-            let currentScheduleData = null;
-            let isMobileView = window.innerWidth < 768;
-            let currentMondayDate = getMondayOfCurrentWeek();
-            let currentLanguage = localStorage.getItem('edtLanguage') || 'fr';
-            
-            // Set current Monday as default
+      document.addEventListener("DOMContentLoaded", function () {
+        // DOM elements
+        const userIdContainer = document.getElementById("userIdContainer");
+        const newUserId = document.getElementById("newUserId");
+        const saveUserId = document.getElementById("saveUserId");
+        const changeUserId = document.getElementById("changeUserId");
+        const weekDate = document.getElementById("weekDate");
+        const scheduleContainer = document.getElementById("scheduleContainer");
+        const daysTabs = document.getElementById("daysTabs");
+        const loading = document.getElementById("loading");
+        const initialMessage = document.getElementById("initial-message");
+        const themeToggle = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+        const langToggle = document.getElementById("langToggle");
+        const langText = document.getElementById("langText");
+        const prevWeekBtn = document.getElementById("prevWeekBtn");
+        const nextWeekBtn = document.getElementById("nextWeekBtn");
+        const datePickerBtn = document.getElementById("datePickerBtn");
+
+        // Week picker modal elements
+        const weekPickerModal = document.getElementById("weekPickerModal");
+        const weekPickerTitle = document.getElementById("weekPickerTitle");
+        const closeWeekPicker = document.getElementById("closeWeekPicker");
+        const cancelWeekPicker = document.getElementById("cancelWeekPicker");
+        const selectWeek = document.getElementById("selectWeek");
+        const prevMonth = document.getElementById("prevMonth");
+        const nextMonth = document.getElementById("nextMonth");
+        const currentMonthYear = document.getElementById("currentMonthYear");
+        const calendarGrid = document.getElementById("calendarGrid");
+
+        // Translation dictionaries
+        const translations = {
+          fr: {
+            title: "EPSI Emploi du temps",
+            welcome: "Bienvenue",
+            userIdPrompt: "Veuillez entrer votre identifiant utilisateur pour continuer.",
+            enterUserId: "Entrez votre ID",
+            save: "Enregistrer",
+            prevWeek: "Semaine précédente",
+            nextWeek: "Semaine suivante",
+            changeUser: "Changer d'utilisateur",
+            refresh: "Actualiser",
+            pickWeek: "Choisir semaine",
+            weekPickerTitle: "Choisir une semaine",
+            cancel: "Annuler",
+            select: "Sélectionner",
+            weekOf: "Semaine du",
+            to: "au",
+            loading: "Chargement de l'emploi du temps...",
+            enterIdToShow: "Veuillez entrer votre identifiant pour afficher l'emploi du temps",
+            errorFetching: "Erreur lors de la récupération de l'emploi du temps. Veuillez réessayer.",
+            noClass: "Aucun cours prévu",
+            days: ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"],
+            room: "Salle non spécifiée",
+            teacher: "Enseignant non spécifié",
+            untitled: "Sans titre",
+          },
+          en: {
+            title: "EPSI Schedule",
+            welcome: "Welcome",
+            userIdPrompt: "Please enter your user ID to continue.",
+            enterUserId: "Enter your ID",
+            save: "Save",
+            prevWeek: "Previous week",
+            nextWeek: "Next week",
+            changeUser: "Change user",
+            refresh: "Refresh",
+            pickWeek: "Pick week",
+            weekPickerTitle: "Pick a week",
+            cancel: "Cancel",
+            select: "Select",
+            weekOf: "Week of",
+            to: "to",
+            loading: "Loading schedule...",
+            enterIdToShow: "Please enter your ID to display the schedule",
+            errorFetching: "Error fetching schedule data. Please try again.",
+            noClass: "No classes scheduled",
+            days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            room: "Room not specified",
+            teacher: "Teacher not specified",
+            untitled: "Untitled",
+          },
+        };
+        // Variables for mobile view and week navigation
+        let activeDayIndex = 0;
+        let currentScheduleData = null;
+        let isMobileView = window.innerWidth < 768;
+        let currentMondayDate = getMondayOfCurrentWeek();
+        let currentLanguage = localStorage.getItem("edtLanguage") || "fr";
+
+        // Week picker variables
+        let pickerCurrentDate = new Date();
+        let selectedWeekStart = null;
+
+        // Set current Monday as default
+        weekDate.value = formatDateForInput(currentMondayDate);
+
+        // Apply language
+        applyLanguage();
+
+        // Update selected week text
+        updateSelectedWeekText(currentMondayDate);
+        // Check for window resize to toggle between mobile and desktop views
+        window.addEventListener("resize", function () {
+          const newIsMobileView = window.innerWidth < 768;
+          if (newIsMobileView !== isMobileView) {
+            isMobileView = newIsMobileView;
+          }
+
+          // Always redisplay schedule on resize to recalculate proportional heights
+          if (currentScheduleData) {
+            displaySchedule(currentScheduleData, currentMondayDate);
+          }
+        });
+
+        // Language toggle functionality
+        langToggle.addEventListener("click", function () {
+          toggleLanguage();
+        });
+
+        function toggleLanguage() {
+          currentLanguage = currentLanguage === "fr" ? "en" : "fr";
+          localStorage.setItem("edtLanguage", currentLanguage);
+          langText.textContent = currentLanguage.toUpperCase();
+          applyLanguage();
+
+          // Refresh the display if we have schedule data
+          if (currentScheduleData) {
+            displaySchedule(currentScheduleData, currentMondayDate);
+          }
+
+          // Update selected week text with new language
+          updateSelectedWeekText(currentMondayDate);
+        }
+
+        function applyLanguage() {
+          // Set the HTML lang attribute
+          document.documentElement.setAttribute("lang", currentLanguage);
+
+          // Update the button text
+          langText.textContent = currentLanguage.toUpperCase();
+
+          // Update page title
+          document.title = translations[currentLanguage].title;
+          document.querySelector("h1").textContent = translations[currentLanguage].title;
+
+          // Update welcome text if visible
+          if (!userIdContainer.classList.contains("d-none")) {
+            userIdContainer.querySelector(".card-title").textContent = translations[currentLanguage].welcome;
+            userIdContainer.querySelector(".card-text").textContent = translations[currentLanguage].userIdPrompt;
+            newUserId.placeholder = translations[currentLanguage].enterUserId;
+            saveUserId.textContent = translations[currentLanguage].save;
+          } // Update buttons
+          prevWeekBtn.innerHTML = `<i class="bi bi-arrow-left"></i> <span class="btn-text">${translations[currentLanguage].prevWeek}</span>`;
+          nextWeekBtn.innerHTML = `<span class="btn-text">${translations[currentLanguage].nextWeek}</span> <i class="bi bi-arrow-right"></i>`;
+          changeUserId.innerHTML = `<i class="bi bi-person-gear"></i> <span class="btn-text">${translations[currentLanguage].changeUser}</span>`;
+          document.getElementById("refreshBtnText").textContent = translations[currentLanguage].refresh;
+          document.getElementById("datePickerBtnText").textContent = translations[currentLanguage].pickWeek;
+
+          // Update week picker modal
+          weekPickerTitle.textContent = translations[currentLanguage].weekPickerTitle;
+          cancelWeekPicker.textContent = translations[currentLanguage].cancel;
+          selectWeek.textContent = translations[currentLanguage].select;
+
+          // Update initial message if visible
+          if (!initialMessage.classList.contains("d-none")) {
+            initialMessage.textContent = translations[currentLanguage].loading;
+          }
+
+          // Update selected week text
+          updateSelectedWeekText(currentMondayDate);
+        }
+
+        // Check if user ID is stored in localStorage
+        const savedUserId = localStorage.getItem("edtUserId");
+
+        if (savedUserId) {
+          // User ID exists, display it and load schedule
+          loadSchedule(savedUserId, currentMondayDate);
+        } else {
+          // No user ID, show the input form
+          userIdContainer.classList.remove("d-none");
+          initialMessage.textContent = translations[currentLanguage].enterIdToShow;
+        }
+
+        // Week navigation - Previous week
+        prevWeekBtn.addEventListener("click", function () {
+          const prevMonday = new Date(currentMondayDate);
+          prevMonday.setDate(prevMonday.getDate() - 7);
+
+          currentMondayDate = prevMonday;
+          weekDate.value = formatDateForInput(currentMondayDate);
+
+          const userId = localStorage.getItem("edtUserId");
+          if (userId) {
+            loadSchedule(userId, currentMondayDate);
+          }
+        });
+
+        // Week navigation - Next week
+        nextWeekBtn.addEventListener("click", function () {
+          const nextMonday = new Date(currentMondayDate);
+          nextMonday.setDate(nextMonday.getDate() + 7);
+
+          currentMondayDate = nextMonday;
+          weekDate.value = formatDateForInput(currentMondayDate);
+
+          const userId = localStorage.getItem("edtUserId");
+          if (userId) {
+            loadSchedule(userId, currentMondayDate);
+          }
+        });
+        // Add functionality for refresh button (no cache)
+        document.getElementById("refreshBtn").addEventListener("click", function () {
+          const userId = localStorage.getItem("edtUserId");
+          if (userId) {
+            // Add a timestamp to prevent caching
+            loadScheduleNoCache(userId, currentMondayDate);
+          }
+        }); // Custom Week Picker functionality
+        datePickerBtn.addEventListener("click", function () {
+          pickerCurrentDate = new Date(currentMondayDate);
+          selectedWeekStart = null;
+          selectWeek.disabled = true;
+          generateCalendar();
+          weekPickerModal.style.display = "flex";
+        });
+
+        closeWeekPicker.addEventListener("click", function () {
+          weekPickerModal.style.display = "none";
+        });
+
+        cancelWeekPicker.addEventListener("click", function () {
+          weekPickerModal.style.display = "none";
+        });
+
+        selectWeek.addEventListener("click", function () {
+          if (selectedWeekStart) {
+            currentMondayDate = new Date(selectedWeekStart);
             weekDate.value = formatDateForInput(currentMondayDate);
-            
-            // Apply language
-            applyLanguage();
-            
-            // Update selected week text
-            updateSelectedWeekText(currentMondayDate);
-            
-            // Check for window resize to toggle between mobile and desktop views
-            window.addEventListener('resize', function() {
-                const newIsMobileView = window.innerWidth < 768;
-                if (newIsMobileView !== isMobileView) {
-                    isMobileView = newIsMobileView;
-                    if (currentScheduleData) {
-                        displaySchedule(currentScheduleData, currentMondayDate);
-                    }
-                }
-            });
-            
-            // Language toggle functionality
-            langToggle.addEventListener('click', function() {
-                toggleLanguage();
-            });
-            
-            function toggleLanguage() {
-                currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
-                localStorage.setItem('edtLanguage', currentLanguage);
-                langText.textContent = currentLanguage.toUpperCase();
-                applyLanguage();
-                
-                // Refresh the display if we have schedule data
-                if (currentScheduleData) {
-                    displaySchedule(currentScheduleData, currentMondayDate);
-                }
-                
-                // Update selected week text with new language
-                updateSelectedWeekText(currentMondayDate);
+
+            const userId = localStorage.getItem("edtUserId");
+            if (userId) {
+              loadSchedule(userId, currentMondayDate);
             }
-            
-            function applyLanguage() {
-                // Set the HTML lang attribute
-                document.documentElement.setAttribute('lang', currentLanguage);
-                
-                // Update the button text
-                langText.textContent = currentLanguage.toUpperCase();
-                
-                // Update page title
-                document.title = translations[currentLanguage].title;
-                document.querySelector('h1').textContent = translations[currentLanguage].title;
-                
-                // Update welcome text if visible
-                if (!userIdContainer.classList.contains('d-none')) {
-                    userIdContainer.querySelector('.card-title').textContent = translations[currentLanguage].welcome;
-                    userIdContainer.querySelector('.card-text').textContent = translations[currentLanguage].userIdPrompt;
-                    newUserId.placeholder = translations[currentLanguage].enterUserId;
-                    saveUserId.textContent = translations[currentLanguage].save;
-                }
-                
-                // Update buttons
-                prevWeekBtn.innerHTML = `<i class="bi bi-arrow-left"></i> ${translations[currentLanguage].prevWeek}`;
-                nextWeekBtn.innerHTML = `${translations[currentLanguage].nextWeek} <i class="bi bi-arrow-right"></i>`;
-                changeUserId.textContent = translations[currentLanguage].changeUser;
-                document.getElementById('refreshBtnText').textContent = translations[currentLanguage].refresh;
-                
-                // Update initial message if visible
-                if (!initialMessage.classList.contains('d-none')) {
-                    initialMessage.textContent = translations[currentLanguage].loading;
-                }
-                
-                // Update selected week text
-                updateSelectedWeekText(currentMondayDate);
+
+            weekPickerModal.style.display = "none";
+          }
+        });
+
+        prevMonth.addEventListener("click", function () {
+          pickerCurrentDate.setMonth(pickerCurrentDate.getMonth() - 1);
+          generateCalendar();
+        });
+
+        nextMonth.addEventListener("click", function () {
+          pickerCurrentDate.setMonth(pickerCurrentDate.getMonth() + 1);
+          generateCalendar();
+        });
+
+        // Close modal when clicking outside
+        weekPickerModal.addEventListener("click", function (e) {
+          if (e.target === weekPickerModal) {
+            weekPickerModal.style.display = "none";
+          }
+        });
+
+        function generateCalendar() {
+          const locale = currentLanguage === "fr" ? "fr-FR" : "en-US";
+          const monthYear = pickerCurrentDate.toLocaleDateString(locale, {month: "long", year: "numeric"});
+          currentMonthYear.textContent = monthYear;
+
+          // Clear previous calendar
+          calendarGrid.innerHTML = "";
+
+          // Day headers
+          const dayHeaders =
+            currentLanguage === "fr"
+              ? ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+              : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+          dayHeaders.forEach((day) => {
+            const header = document.createElement("div");
+            header.className = "calendar-day-header";
+            header.textContent = day;
+            calendarGrid.appendChild(header);
+          });
+
+          // Get first day of month and calculate calendar start
+          const firstDay = new Date(pickerCurrentDate.getFullYear(), pickerCurrentDate.getMonth(), 1);
+          const startDate = new Date(firstDay);
+
+          // Adjust for Monday start (1 = Monday)
+          const dayOffset = (firstDay.getDay() === 0 ? 7 : firstDay.getDay()) - 1;
+          startDate.setDate(startDate.getDate() - dayOffset);
+
+          // Generate 42 days (6 weeks)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+
+            const dayElement = document.createElement("div");
+            dayElement.className = "calendar-day";
+            dayElement.textContent = date.getDate();
+
+            // Add classes for styling
+            if (date.getMonth() !== pickerCurrentDate.getMonth()) {
+              dayElement.classList.add("other-month");
             }
-            
-            // Check if user ID is stored in localStorage
-            const savedUserId = localStorage.getItem('edtUserId');
-            
-            if (savedUserId) {
-                // User ID exists, display it and load schedule
-                loadSchedule(savedUserId, currentMondayDate);
-            } else {
-                // No user ID, show the input form
-                userIdContainer.classList.remove('d-none');
-                initialMessage.textContent = translations[currentLanguage].enterIdToShow;
+
+            if (date.getTime() === today.getTime()) {
+              dayElement.classList.add("today");
             }
-            
-            // Week navigation - Previous week
-            prevWeekBtn.addEventListener('click', function() {
-                const prevMonday = new Date(currentMondayDate);
-                prevMonday.setDate(prevMonday.getDate() - 7);
-                
-                currentMondayDate = prevMonday;
-                weekDate.value = formatDateForInput(currentMondayDate);
-                
-                const userId = localStorage.getItem('edtUserId');
-                if (userId) {
-                    loadSchedule(userId, currentMondayDate);
-                }
+
+            // Add click handler
+            dayElement.addEventListener("click", function () {
+              selectWeekForDate(date);
             });
-            
-            // Week navigation - Next week
-            nextWeekBtn.addEventListener('click', function() {
-                const nextMonday = new Date(currentMondayDate);
-                nextMonday.setDate(nextMonday.getDate() + 7);
-                
-                currentMondayDate = nextMonday;
-                weekDate.value = formatDateForInput(currentMondayDate);
-                
-                const userId = localStorage.getItem('edtUserId');
-                if (userId) {
-                    loadSchedule(userId, currentMondayDate);
-                }
+
+            calendarGrid.appendChild(dayElement);
+          }
+        }
+
+        function selectWeekForDate(date) {
+          // Calculate Monday of the selected week
+          const selectedDay = date.getDay() || 7; // Convert Sunday (0) to 7
+          const monday = new Date(date);
+          monday.setDate(date.getDate() - (selectedDay - 1));
+          monday.setHours(0, 0, 0, 0);
+
+          selectedWeekStart = monday;
+          selectWeek.disabled = false;
+
+          // Highlight the selected week
+          const allDays = calendarGrid.querySelectorAll(".calendar-day");
+          allDays.forEach((day) => day.classList.remove("selected-week"));
+
+          // Highlight all days in the selected week
+          for (let i = 0; i < 7; i++) {
+            const weekDay = new Date(monday);
+            weekDay.setDate(monday.getDate() + i);
+
+            allDays.forEach((dayElement) => {
+              const dayDate = new Date(pickerCurrentDate.getFullYear(), pickerCurrentDate.getMonth(), 1);
+              const dayOffset = (dayDate.getDay() === 0 ? 7 : dayDate.getDay()) - 1;
+              dayDate.setDate(dayDate.getDate() - dayOffset);
+
+              const elementIndex = Array.from(allDays).indexOf(dayElement);
+              const elementDate = new Date(dayDate);
+              elementDate.setDate(dayDate.getDate() + elementIndex);
+
+              if (elementDate.getTime() === weekDay.getTime()) {
+                dayElement.classList.add("selected-week");
+              }
             });
-            
-            // Add functionality for refresh button (no cache)
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                const userId = localStorage.getItem('edtUserId');
-                if (userId) {
-                    // Add a timestamp to prevent caching
-                    loadScheduleNoCache(userId, currentMondayDate);
-                }
-            });
-            
-            function loadScheduleNoCache(userId, selectedDate) {
-                // Select Schedule container and replace with spinner
-                scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
+          }
+        }
+
+        function loadScheduleNoCache(userId, selectedDate) {
+          // Select Schedule container and replace with spinner
+          scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
                     <div class="spinner-border text-primary" id="loading" role="status">
                         <span class="visually-hidden">${translations[currentLanguage].loading}</span>
                     </div>
                     <p id="initial-message">${translations[currentLanguage].loading}</p>
                 </div>`;
-                
-                // Update selected week text
-                updateSelectedWeekText(selectedDate);
-                
-                // Format date for URL: DD-MM-YYYY
-                const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
-                
-                // Add timestamp to URL to bypass cache
-                const timestamp = new Date().getTime();
-                
-                // Fetch schedule data for the week containing the selected date
-                fetch(`/week/${formattedDate}?user=${userId}&_=${timestamp}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    currentScheduleData = data;
-                    displaySchedule(data, selectedDate);
-                    loading.classList.add('d-none');
-                    initialMessage.classList.add('d-none');
-                })
-                .catch(error => {
-                    console.error('Error fetching schedule data:', error);
-                    scheduleContainer.innerHTML = `
+
+          // Update selected week text
+          updateSelectedWeekText(selectedDate);
+
+          // Format date for URL: DD-MM-YYYY
+          const formattedDate = `${String(selectedDate.getDate()).padStart(2, "0")}-${String(
+            selectedDate.getMonth() + 1
+          ).padStart(2, "0")}-${selectedDate.getFullYear()}`;
+
+          // Add timestamp to URL to bypass cache
+          const timestamp = new Date().getTime();
+
+          // Fetch schedule data for the week containing the selected date
+          fetch(`/week/${formattedDate}?user=${userId}&_=${timestamp}`, {
+            headers: {
+              Accept: "application/json",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              currentScheduleData = data;
+              displaySchedule(data, selectedDate);
+              loading.classList.add("d-none");
+              initialMessage.classList.add("d-none");
+            })
+            .catch((error) => {
+              console.error("Error fetching schedule data:", error);
+              scheduleContainer.innerHTML = `
                         <div class="col-12">
                             <div class="alert alert-danger" role="alert">
                                 ${translations[currentLanguage].errorFetching}
                             </div>
                         </div>
                     `;
-                    loading.classList.add('d-none');
-                    initialMessage.classList.add('d-none');
-                });
-            }
+              loading.classList.add("d-none");
+              initialMessage.classList.add("d-none");
+            });
+        }
 
-            // Helper function to get Monday of current week
-            function getMondayOfCurrentWeek() {
-                const today = new Date();
-                const day = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
-                const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-                
-                const monday = new Date(today);
-                monday.setDate(diff);
-                monday.setHours(0, 0, 0, 0);
-                return monday;
-            }
-            
-            // Format a date object to YYYY-MM-DD for input value
-            function formatDateForInput(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            }
-            
-            // Update the selected week text
-            function updateSelectedWeekText(mondayDate) {
-                const monday = new Date(mondayDate);
-                const friday = new Date(mondayDate);
-                friday.setDate(monday.getDate() + 4); // Set to Friday (Monday + 4 days)
-                
-                const options = { day: 'numeric', month: 'long', year: 'numeric' };
-                const locale = currentLanguage === 'fr' ? 'fr-FR' : 'en-US';
-                const mondayFormatted = monday.toLocaleDateString(locale, options);
-                const fridayFormatted = friday.toLocaleDateString(locale, options);
-                
-                document.getElementById('selectedWeek').textContent = `${translations[currentLanguage].weekOf} ${mondayFormatted} ${translations[currentLanguage].to} ${fridayFormatted}`;
-            }
-            
-            // Save new user ID
-            saveUserId.addEventListener('click', function() {
-                const userId = newUserId.value.trim();
-                if (!userId) {
-                    alert(translations[currentLanguage].userIdPrompt);
-                    return;
-                }
-                
-                // Save to localStorage
-                localStorage.setItem('edtUserId', userId);
-                
-                // Hide user ID container
-                userIdContainer.classList.add('d-none');
-                
-                // Load schedule
-                loadSchedule(userId, currentMondayDate);
-            });
-            
-            // Change user ID
-            changeUserId.addEventListener('click', function() {
-                userIdContainer.classList.remove('d-none');
-                newUserId.focus();
-            });
-            
-            // Theme toggle functionality
-            themeToggle.addEventListener('click', function() {
-                toggleTheme();
-            });
-            
-            // Check for saved theme preference and apply it
-            function applyTheme() {
-                const savedTheme = localStorage.getItem('edtTheme') || 'dark';
-                const htmlElement = document.documentElement;
-                
-                if (savedTheme === 'light') {
-                    htmlElement.classList.remove('dark-mode');
-                    htmlElement.classList.add('light-mode');
-                    themeIcon.classList.remove('bi-sun-fill');
-                    themeIcon.classList.add('bi-moon-fill');
-                } else {
-                    // Default to dark mode
-                    htmlElement.classList.remove('light-mode');
-                    htmlElement.classList.add('dark-mode');
-                    themeIcon.classList.remove('bi-moon-fill');
-                    themeIcon.classList.add('bi-sun-fill');
-                }
-            }
-            
-            // Toggle between light and dark themes
-            function toggleTheme() {
-                const htmlElement = document.documentElement;
-                if (htmlElement.classList.contains('dark-mode')) {
-                    // Switch to light mode
-                    htmlElement.classList.remove('dark-mode');
-                    htmlElement.classList.add('light-mode');
-                    themeIcon.classList.remove('bi-sun-fill');
-                    themeIcon.classList.add('bi-moon-fill');
-                    localStorage.setItem('edtTheme', 'light');
-                } else {
-                    // Switch to dark mode
-                    htmlElement.classList.remove('light-mode');
-                    htmlElement.classList.add('dark-mode');
-                    themeIcon.classList.remove('bi-moon-fill');
-                    themeIcon.classList.add('bi-sun-fill');
-                    localStorage.setItem('edtTheme', 'dark');
-                }
-            }
-            
-            // Apply saved theme or default (dark mode) on page load
-            applyTheme();
-            
-            function loadSchedule(userId, selectedDate) {
-                // Select Schedule container and replace with spinner
-                scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
+        // Helper function to get Monday of current week
+        function getMondayOfCurrentWeek() {
+          const today = new Date();
+          const day = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+          const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+
+          const monday = new Date(today);
+          monday.setDate(diff);
+          monday.setHours(0, 0, 0, 0);
+          return monday;
+        }
+
+        // Format a date object to YYYY-MM-DD for input value
+        function formatDateForInput(date) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        }
+
+        // Update the selected week text
+        function updateSelectedWeekText(mondayDate) {
+          const monday = new Date(mondayDate);
+          const friday = new Date(mondayDate);
+          friday.setDate(monday.getDate() + 4); // Set to Friday (Monday + 4 days)
+
+          const options = {day: "numeric", month: "long", year: "numeric"};
+          const locale = currentLanguage === "fr" ? "fr-FR" : "en-US";
+          const mondayFormatted = monday.toLocaleDateString(locale, options);
+          const fridayFormatted = friday.toLocaleDateString(locale, options);
+
+          document.getElementById(
+            "selectedWeek"
+          ).textContent = `${translations[currentLanguage].weekOf} ${mondayFormatted} ${translations[currentLanguage].to} ${fridayFormatted}`;
+        }
+
+        // Save new user ID
+        saveUserId.addEventListener("click", function () {
+          const userId = newUserId.value.trim();
+          if (!userId) {
+            alert(translations[currentLanguage].userIdPrompt);
+            return;
+          }
+
+          // Save to localStorage
+          localStorage.setItem("edtUserId", userId);
+
+          // Hide user ID container
+          userIdContainer.classList.add("d-none");
+
+          // Load schedule
+          loadSchedule(userId, currentMondayDate);
+        });
+
+        // Change user ID
+        changeUserId.addEventListener("click", function () {
+          userIdContainer.classList.remove("d-none");
+          newUserId.focus();
+        });
+
+        // Theme toggle functionality
+        themeToggle.addEventListener("click", function () {
+          toggleTheme();
+        });
+
+        // Check for saved theme preference and apply it
+        function applyTheme() {
+          const savedTheme = localStorage.getItem("edtTheme") || "dark";
+          const htmlElement = document.documentElement;
+
+          if (savedTheme === "light") {
+            htmlElement.classList.remove("dark-mode");
+            htmlElement.classList.add("light-mode");
+            themeIcon.classList.remove("bi-sun-fill");
+            themeIcon.classList.add("bi-moon-fill");
+          } else {
+            // Default to dark mode
+            htmlElement.classList.remove("light-mode");
+            htmlElement.classList.add("dark-mode");
+            themeIcon.classList.remove("bi-moon-fill");
+            themeIcon.classList.add("bi-sun-fill");
+          }
+        }
+
+        // Toggle between light and dark themes
+        function toggleTheme() {
+          const htmlElement = document.documentElement;
+          if (htmlElement.classList.contains("dark-mode")) {
+            // Switch to light mode
+            htmlElement.classList.remove("dark-mode");
+            htmlElement.classList.add("light-mode");
+            themeIcon.classList.remove("bi-sun-fill");
+            themeIcon.classList.add("bi-moon-fill");
+            localStorage.setItem("edtTheme", "light");
+          } else {
+            // Switch to dark mode
+            htmlElement.classList.remove("light-mode");
+            htmlElement.classList.add("dark-mode");
+            themeIcon.classList.remove("bi-moon-fill");
+            themeIcon.classList.add("bi-sun-fill");
+            localStorage.setItem("edtTheme", "dark");
+          }
+        } // Apply saved theme or default (dark mode) on page load
+        applyTheme();
+
+        // Add keyboard navigation for week switching
+        document.addEventListener("keydown", function (e) {
+          // Only handle arrow keys when not typing in an input field
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+            return;
+          }
+
+          // Prevent default behavior for arrow keys to avoid page scrolling
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            e.preventDefault();
+          }
+
+          const userId = localStorage.getItem("edtUserId");
+          if (!userId) return; // Don't navigate if no user is set
+
+          if (e.key === "ArrowLeft") {
+            // Previous week (same as clicking previous week button)
+            const prevMonday = new Date(currentMondayDate);
+            prevMonday.setDate(prevMonday.getDate() - 7);
+
+            currentMondayDate = prevMonday;
+            weekDate.value = formatDateForInput(currentMondayDate);
+            loadSchedule(userId, currentMondayDate);
+          } else if (e.key === "ArrowRight") {
+            // Next week (same as clicking next week button)
+            const nextMonday = new Date(currentMondayDate);
+            nextMonday.setDate(nextMonday.getDate() + 7);
+
+            currentMondayDate = nextMonday;
+            weekDate.value = formatDateForInput(currentMondayDate);
+            loadSchedule(userId, currentMondayDate);
+          }
+        });
+
+        function loadSchedule(userId, selectedDate) {
+          // Select Schedule container and replace with spinner
+          scheduleContainer.innerHTML = `<div class="col-12 text-center my-5">
                     <div class="spinner-border text-primary" id="loading" role="status">
                         <span class="visually-hidden">${translations[currentLanguage].loading}</span>
                     </div>
                     <p id="initial-message">${translations[currentLanguage].loading}</p>
                 </div>`;
-                
-                // Update selected week text
-                updateSelectedWeekText(selectedDate);
-                
-                // Format date for URL: DD-MM-YYYY
-                const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${selectedDate.getFullYear()}`;
-                
-                // Fetch schedule data for the week containing the selected date
-                fetch(`/week/${formattedDate}?user=${userId}`, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    currentScheduleData = data;
-                    displaySchedule(data, selectedDate);
-                    loading.classList.add('d-none');
-                    initialMessage.classList.add('d-none');
-                })
-                .catch(error => {
-                    console.error('Error fetching schedule data:', error);
-                    scheduleContainer.innerHTML = `
+
+          // Update selected week text
+          updateSelectedWeekText(selectedDate);
+
+          // Format date for URL: DD-MM-YYYY
+          const formattedDate = `${String(selectedDate.getDate()).padStart(2, "0")}-${String(
+            selectedDate.getMonth() + 1
+          ).padStart(2, "0")}-${selectedDate.getFullYear()}`;
+
+          // Fetch schedule data for the week containing the selected date
+          fetch(`/week/${formattedDate}?user=${userId}`, {
+            headers: {
+              Accept: "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              currentScheduleData = data;
+              displaySchedule(data, selectedDate);
+              loading.classList.add("d-none");
+              initialMessage.classList.add("d-none");
+            })
+            .catch((error) => {
+              console.error("Error fetching schedule data:", error);
+              scheduleContainer.innerHTML = `
                         <div class="col-12">
                             <div class="alert alert-danger" role="alert">
                                 ${translations[currentLanguage].errorFetching}
                             </div>
                         </div>
                     `;
-                    loading.classList.add('d-none');
-                    initialMessage.classList.add('d-none');
-                });
+              loading.classList.add("d-none");
+              initialMessage.classList.add("d-none");
+            });
+        }
+        function displaySchedule(data, selectedDate) {
+          // Clear previous schedule
+          scheduleContainer.innerHTML = "";
+          daysTabs.innerHTML = "";
+
+          // Get Monday of the selected week
+          const selectedDay = selectedDate.getDay() || 7; // Convert Sunday (0) to 7
+          const monday = new Date(selectedDate);
+          monday.setDate(monday.getDate() - (selectedDay - 1));
+
+          // Create days of the week
+          const days = translations[currentLanguage].days;
+          const datesOfWeek = [];
+          const visibleDays = [];
+
+          // Create date objects for each day of the week
+          for (let i = 0; i < 5; i++) {
+            const date = new Date(monday);
+            date.setDate(monday.getDate() + i);
+            datesOfWeek.push(date);
+          }
+
+          // Create tabs for mobile view and gather visible days
+          days.forEach((day, index) => {
+            data[index] = data[index].filter(
+              (item) =>
+                item.end_time !== null &&
+                item.name !== null &&
+                item.room !== null &&
+                item.start_time !== null &&
+                item.teacher !== null
+            );
+
+            // Add to visible days
+            visibleDays.push(index);
+
+            // Create tab for mobile view
+            const date = datesOfWeek[index];
+            const formattedDate = `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}`;
+
+            const tab = document.createElement("span");
+            tab.className = "day-tab";
+            tab.dataset.dayIndex = index;
+            tab.innerText = `${day} ${formattedDate}`;
+
+            tab.addEventListener("click", function () {
+              // Update active tab
+              document.querySelectorAll(".day-tab").forEach((t) => t.classList.remove("active"));
+              this.classList.add("active");
+
+              // Show selected day in mobile view
+              activeDayIndex = parseInt(this.dataset.dayIndex);
+              showActiveDayOnMobile();
+            });
+
+            daysTabs.appendChild(tab);
+          });
+
+          // Set default active tab (first day)
+          if (visibleDays.length > 0) {
+            activeDayIndex = visibleDays[0];
+            const firstTab = daysTabs.querySelector(`.day-tab[data-day-index="${activeDayIndex}"]`);
+            if (firstTab) {
+              firstTab.classList.add("active");
+            }
+          }
+
+          // Create columns for each day
+          days.forEach((day, index) => {
+            const date = datesOfWeek[index];
+            const locale = currentLanguage === "fr" ? "fr-FR" : "en-GB";
+            const formattedDate = date.toLocaleDateString(locale, {day: "2-digit", month: "2-digit", year: "numeric"});
+
+            // Create column for day
+            const dayColumn = document.createElement("div");
+            dayColumn.className = "col-md day-column";
+            dayColumn.dataset.dayIndex = index;
+
+            // On mobile, only show the active day
+            if (isMobileView && index !== activeDayIndex) {
+              dayColumn.style.display = "none";
             }
 
-            function displaySchedule(data, selectedDate) {
-                // Clear previous schedule
-                scheduleContainer.innerHTML = '';
-                daysTabs.innerHTML = '';
-                
-                // Get Monday of the selected week
-                const selectedDay = selectedDate.getDay() || 7; // Convert Sunday (0) to 7
-                const monday = new Date(selectedDate);
-                monday.setDate(monday.getDate() - (selectedDay - 1));
-                
-                // Create days of the week
-                const days = translations[currentLanguage].days;
-                const datesOfWeek = [];
-                const visibleDays = [];
-                
-                // Create date objects for each day of the week
-                for (let i = 0; i < 5; i++) {
-                    const date = new Date(monday);
-                    date.setDate(monday.getDate() + i);
-                    datesOfWeek.push(date);
-                }
-                
-                // Create tabs for mobile view and gather visible days
-                days.forEach((day, index) => {
-                    data[index] = data[index].filter(item => item.end_time !== null && 
-                    item.name !== null &&
-                    item.room !== null &&
-                    item.start_time !== null &&
-                    item.teacher !== null);
-
-                    // Add to visible days
-                    visibleDays.push(index);
-                    
-                    // Create tab for mobile view
-                    const date = datesOfWeek[index];
-                    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-                    
-                    const tab = document.createElement('span');
-                    tab.className = 'day-tab';
-                    tab.dataset.dayIndex = index;
-                    tab.innerText = `${day} ${formattedDate}`;
-                    
-                    tab.addEventListener('click', function() {
-                        // Update active tab
-                        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
-                        this.classList.add('active');
-                        
-                        // Show selected day in mobile view
-                        activeDayIndex = parseInt(this.dataset.dayIndex);
-                        showActiveDayOnMobile();
-                    });
-                    
-                    daysTabs.appendChild(tab);
-                });
-                
-                // Set default active tab (first day)
-                if (visibleDays.length > 0) {
-                    activeDayIndex = visibleDays[0];
-                    const firstTab = daysTabs.querySelector(`.day-tab[data-day-index="${activeDayIndex}"]`);
-                    if (firstTab) {
-                        firstTab.classList.add('active');
-                    }
-                }
-                
-                // Create columns for each day
-                days.forEach((day, index) => {
-                    const date = datesOfWeek[index];
-                    const locale = currentLanguage === 'fr' ? 'fr-FR' : 'en-GB';
-                    const formattedDate = date.toLocaleDateString(locale, {day: '2-digit', month: '2-digit', year: 'numeric'});
-                    
-                    // Create column for day
-                    const dayColumn = document.createElement('div');
-                    dayColumn.className = 'col-md day-column';
-                    dayColumn.dataset.dayIndex = index;
-                    
-                    // On mobile, only show the active day
-                    if (isMobileView && index !== activeDayIndex) {
-                        dayColumn.style.display = 'none';
-                    }
-                    
-                    dayColumn.innerHTML = `
+            dayColumn.innerHTML = `
                         <h5 class="text-center text-nowrap mb-3">${day} ${formattedDate}</h5>
                         <div id="day-${index}" class="day-schedule"></div>
                     `;
-                    scheduleContainer.appendChild(dayColumn);
-                    
-                    const daySchedule = dayColumn.querySelector(`#day-${index}`);
-                    
-                    // Find schedule items for this day
-                    if (data[index] && data[index].length > 0) {
-                        // Sort by start time
-                        const sortedItems = [...data[index]].sort((a, b) => {
-                            if (a.start_time && b.start_time) {
-                                return a.start_time.localeCompare(b.start_time);
-                            }
-                            return 0;
-                        });
-                        
-                        // Display items
-                        sortedItems.forEach(item => {
-                            const scheduleItem = document.createElement('div');
-                            scheduleItem.className = 'schedule-item';
-                            
-                            // Format time based on selected language
-                            let startTime = item.start_time || '??:??';
-                            let endTime = item.end_time || '??:??';
-                            
-                            if (currentLanguage === 'en') {
-                                // Convert to 12-hour AM/PM format for English
-                                startTime = convertTo12HourFormat(startTime);
-                                endTime = convertTo12HourFormat(endTime);
-                            }
-                            
-                            scheduleItem.innerHTML = `
-                                <div class="time">${startTime} - ${endTime}</div>
-                                <div class="name fw-bold">${item.name || translations[currentLanguage].untitled}</div>
-                                <div class="room">${item.room || translations[currentLanguage].room}</div>
-                                <div class="teacher">${item.teacher || translations[currentLanguage].teacher}</div>
+            scheduleContainer.appendChild(dayColumn);
+
+            const daySchedule = dayColumn.querySelector(`#day-${index}`);
+
+            // Generate proportional schedule
+            generateProportionalSchedule(data[index] || [], daySchedule, index);
+          });
+
+          // If we're on mobile, show only the active day's column
+          if (isMobileView) {
+            showActiveDayOnMobile();
+          }
+        }
+        // Calculate adaptive height based on viewport
+        function calculatePixelsPerMinute() {
+          // Get viewport height
+          const viewportHeight = window.innerHeight;
+
+          // Calculate reserved height based on screen size
+          let reservedHeight;
+          if (window.innerWidth <= 605) {
+            // Mobile small screens - more reserved space for mobile UI
+            reservedHeight = 400; // Account for mobile tabs, buttons, header, padding
+          } else if (window.innerWidth <= 768) {
+            // Mobile medium screens
+            reservedHeight = 380; // Slightly less reserved space
+          } else {
+            // Desktop screens
+            reservedHeight = 300; // Original desktop reserved space
+          }
+
+          const availableHeight = Math.max(200, viewportHeight - reservedHeight); // Ensure minimum space
+
+          // Total schedule duration is 540 minutes (9 AM to 6 PM)
+          const totalMinutes = 540;
+
+          // Calculate pixels per minute to fit in available space
+          let pixelsPerMinute = availableHeight / totalMinutes;
+
+          // Set minimum and maximum bounds with tighter mobile constraints
+          if (window.innerWidth <= 768) {
+            // Tighter bounds for mobile
+            pixelsPerMinute = Math.max(0.3, Math.min(1.2, pixelsPerMinute));
+          } else {
+            // Original bounds for desktop
+            pixelsPerMinute = Math.max(0.5, Math.min(2, pixelsPerMinute));
+          }
+
+          return pixelsPerMinute;
+        }
+
+        function timeToMinutes(timeStr) {
+          if (!timeStr || timeStr === "??:??") return null;
+          const [hours, minutes] = timeStr.split(":").map(Number);
+          return hours * 60 + minutes;
+        }
+
+        function minutesToTime(minutes) {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+        }
+
+        function generateProportionalSchedule(dayData, container, dayIndex) {
+          // Sort items by start time
+          const sortedItems = [...dayData].sort((a, b) => {
+            if (a.start_time && b.start_time) {
+              return a.start_time.localeCompare(b.start_time);
+            }
+            return 0;
+          });
+
+          // Calculate adaptive height for empty day
+          const pixelsPerMinute = calculatePixelsPerMinute();
+          const totalDayHeight = 540 * pixelsPerMinute; // 9 hours * 60 minutes * pixels per minute
+
+          if (sortedItems.length === 0) {
+            const emptyDayDiv = document.createElement("div");
+            emptyDayDiv.className = "empty-day full-day-empty";
+            emptyDayDiv.style.height = `${totalDayHeight}px`;
+            emptyDayDiv.style.minHeight = `${totalDayHeight}px`;
+            emptyDayDiv.textContent = translations[currentLanguage].noClass;
+            container.appendChild(emptyDayDiv);
+            return;
+          }
+          // Define day boundaries (9:00 AM to 6:00 PM = 540 minutes total)
+          const dayStart = 9 * 60; // 9:00 AM in minutes
+          const dayEnd = 18 * 60; // 6:00 PM in minutes
+          const totalDayMinutes = dayEnd - dayStart;
+
+          // Create timeline blocks
+          const timelineBlocks = [];
+          let currentTime = dayStart;
+
+          for (let i = 0; i < sortedItems.length; i++) {
+            const item = sortedItems[i];
+            const itemStart = timeToMinutes(item.start_time);
+            const itemEnd = timeToMinutes(item.end_time);
+
+            if (itemStart === null || itemEnd === null) continue;
+
+            // Add empty block before this item if there's a gap
+            if (currentTime < itemStart) {
+              timelineBlocks.push({
+                type: "empty",
+                start: currentTime,
+                end: itemStart,
+                duration: itemStart - currentTime,
+              });
+            }
+
+            // Add the class block
+            timelineBlocks.push({
+              type: "class",
+              start: itemStart,
+              end: itemEnd,
+              duration: itemEnd - itemStart,
+              data: item,
+            });
+
+            currentTime = itemEnd;
+          }
+
+          // Add final empty block if needed
+          if (currentTime < dayEnd) {
+            timelineBlocks.push({
+              type: "empty",
+              start: currentTime,
+              end: dayEnd,
+              duration: dayEnd - currentTime,
+            });
+          }
+
+          // Render the timeline blocks
+          timelineBlocks.forEach((block) => {
+            const blockHeight = block.duration * pixelsPerMinute;
+
+            if (block.type === "empty") {
+              const emptyBlock = document.createElement("div");
+              emptyBlock.className = "empty-time-block";
+              emptyBlock.style.height = `${blockHeight}px`;
+              emptyBlock.style.minHeight = `${Math.max(window.innerWidth <= 768 ? 10 : 15, blockHeight)}px`;
+
+              // Only show time labels for significant gaps (more than 30 minutes)
+              if (block.duration >= 30) {
+                const startTimeFormatted =
+                  currentLanguage === "en"
+                    ? convertTo12HourFormat(minutesToTime(block.start))
+                    : minutesToTime(block.start);
+                const endTimeFormatted =
+                  currentLanguage === "en" ? convertTo12HourFormat(minutesToTime(block.end)) : minutesToTime(block.end);
+
+                emptyBlock.innerHTML = `
+                                <div class="empty-time-label">
+                                    ${startTimeFormatted} - ${endTimeFormatted}
+                                </div>
                             `;
-                            daySchedule.appendChild(scheduleItem);
-                        });
-                    } else {
-                        // No schedule items for this day
-                        daySchedule.innerHTML = `<div class="empty-day">${translations[currentLanguage].noClass}</div>`;
-                    }
-                });
-                
-                // If we're on mobile, show only the active day's column
-                if (isMobileView) {
-                    showActiveDayOnMobile();
-                }
+              }
+
+              container.appendChild(emptyBlock);
+            } else {
+              const scheduleItem = document.createElement("div");
+              scheduleItem.className = "schedule-item proportional-item";
+              scheduleItem.style.height = `${blockHeight}px`;
+              scheduleItem.style.minHeight = `${Math.max(window.innerWidth <= 768 ? 20 : 30, blockHeight)}px`;
+
+              // Format time based on selected language
+              let startTime = block.data.start_time || "??:??";
+              let endTime = block.data.end_time || "??:??";
+
+              if (currentLanguage === "en") {
+                // Convert to 12-hour AM/PM format for English
+                startTime = convertTo12HourFormat(startTime);
+                endTime = convertTo12HourFormat(endTime);
+              }
+
+              // Calculate duration for display
+              const durationHours = Math.floor(block.duration / 60);
+              const durationMinutes = block.duration % 60;
+              let durationText = "";
+              if (durationHours > 0) {
+                durationText = durationMinutes > 0 ? `${durationHours}h${durationMinutes}m` : `${durationHours}h`;
+              } else {
+                durationText = `${durationMinutes}m`;
+              }
+
+              scheduleItem.innerHTML = `
+                            <div class="time">${startTime} - ${endTime} (${durationText})</div>
+                            <div class="name fw-bold">${block.data.name || translations[currentLanguage].untitled}</div>
+                            <div class="room">${block.data.room || translations[currentLanguage].room}</div>
+                            <div class="teacher">${block.data.teacher || translations[currentLanguage].teacher}</div>
+                        `;
+              container.appendChild(scheduleItem);
             }
-            
-            // Function to show only the active day on mobile
-            function showActiveDayOnMobile() {
-                if (!isMobileView) return;
-                
-                // Hide all day columns
-                document.querySelectorAll('.day-column').forEach(column => {
-                    column.style.display = 'none';
-                });
-                
-                // Show only the active day column
-                const activeColumn = document.querySelector(`.day-column[data-day-index="${activeDayIndex}"]`);
-                if (activeColumn) {
-                    activeColumn.style.display = 'block';
-                }
-            }
-            
-            // Convert 24-hour format time to AM/PM format
-            function convertTo12HourFormat(time24) {
-                if (!time24 || time24 === '??:??') return time24;
-                
-                const [hours, minutes] = time24.split(':');
-                const hour = parseInt(hours, 10);
-                
-                if (isNaN(hour)) return time24;
-                
-                const period = hour >= 12 ? 'PM' : 'AM';
-                const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
-                
-                return `${hour12}:${minutes} ${period}`;
-            }
-        });
+          });
+        }
+
+        // Function to show only the active day on mobile
+        function showActiveDayOnMobile() {
+          if (!isMobileView) return;
+
+          // Hide all day columns
+          document.querySelectorAll(".day-column").forEach((column) => {
+            column.style.display = "none";
+          });
+
+          // Show only the active day column
+          const activeColumn = document.querySelector(`.day-column[data-day-index="${activeDayIndex}"]`);
+          if (activeColumn) {
+            activeColumn.style.display = "block";
+          }
+        }
+
+        // Convert 24-hour format time to AM/PM format
+        function convertTo12HourFormat(time24) {
+          if (!time24 || time24 === "??:??") return time24;
+
+          const [hours, minutes] = time24.split(":");
+          const hour = parseInt(hours, 10);
+
+          if (isNaN(hour)) return time24;
+
+          const period = hour >= 12 ? "PM" : "AM";
+          const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+
+          return `${hour12}:${minutes} ${period}`;
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

@@ -16,11 +16,6 @@ body {
   padding: 0 15px;
 }
 
-.day-column {
-  min-height: 600px;
-  border-right: 1px solid #eee;
-}
-
 .schedule-item {
   background-color: #f8f9fa;
   border-left: 4px solid #8956fb;
@@ -28,6 +23,38 @@ body {
   padding: 10px;
   border-radius: 4px;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.schedule-item.proportional-item {
+  margin-bottom: 2px;
+  box-sizing: border-box;
+}
+
+.empty-time-block {
+  background-color: transparent;
+  border: 1px dashed #dee2e6;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.empty-time-label {
+  font-size: 0.75em;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+}
+
+.full-day-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .schedule-item .time {
@@ -49,13 +76,28 @@ body {
   margin-bottom: 20px;
 }
 
-/* Week navigation buttons styling */
-.week-navigation #prevWeekBtn {
-  margin-right: auto;
+/* Button row styling */
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
-.week-navigation #nextWeekBtn {
-  margin-left: auto;
+.nav-btn {
+  flex: 1;
+  min-width: 120px;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+/* Ensure buttons don't get too wide on desktop */
+@media (min-width: 769px) {
+  .nav-btn {
+    max-width: 200px;
+  }
 }
 
 .empty-day {
@@ -118,6 +160,14 @@ body {
 .dark-mode .schedule-item {
   background-color: #343a40;
   border-left: 4px solid #aa82ff;
+}
+
+.dark-mode .empty-time-block {
+  border-color: #495057;
+}
+
+.dark-mode .empty-time-label {
+  color: #adb5bd;
 }
 
 .dark-mode .schedule-item .time {
@@ -205,19 +255,50 @@ body {
 
 /* Mobile responsive styles */
 @media (max-width: 605px) {
+  body {
+    padding-top: 0;
+    margin-top: 0;
+  }
+
   h1 {
     font-size: 1.25rem;
     margin-top: 8px;
+    margin-bottom: 15px;
+  }
+  /* Mobile button layout */
+  .button-row {
+    gap: 4px;
+    margin-bottom: 15px;
+  }
+
+  .nav-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 0.75rem;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .nav-btn i {
+    font-size: 1rem;
   }
 
   .schedule-item {
-    padding: 8px;
+    padding: 6px;
   }
 
   .schedule-item .time,
   .schedule-item .room,
   .schedule-item .teacher {
-    font-size: 0.75em;
+    font-size: 0.7em;
+    line-height: 1.2;
+  }
+
+  .empty-time-label {
+    font-size: 0.65em;
   }
 
   .schedule-container {
@@ -226,30 +307,58 @@ body {
 
   .day-column {
     min-height: auto;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border-right: none;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
+  }
+
+  .alert-info {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 0.9em;
+  }
+
+  .user-form {
+    margin-bottom: 15px;
   }
 }
 
 @media (max-width: 768px) and (min-width: 605px) {
+  body {
+    padding-top: 0;
+    margin-top: 0;
+  }
+
   .schedule-container {
-    padding: 0 10px;
+    padding: 0 8px;
   }
 
   .day-column {
     min-height: auto;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     border-right: none;
-    padding-bottom: 20px;
+    padding-bottom: 15px;
   }
 
   .day-column:last-child {
     border-bottom: none;
   }
 
+  /* Tablet button layout */
+  .button-row {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .nav-btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+
   .schedule-item {
-    padding: 12px;
+    padding: 10px;
   }
 
   .theme-toggle {
@@ -257,7 +366,7 @@ body {
     right: 5px;
     padding: 5px;
   }
-  
+
   .lang-toggle {
     top: 5px;
     right: 50px;
@@ -265,20 +374,16 @@ body {
     font-size: 0.8rem;
   }
 
-  .btn {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
   h1 {
-    font-size: 1.8rem;
-    margin-top: 15px;
+    font-size: 1.6rem;
+    margin-top: 12px;
+    margin-bottom: 15px;
   }
 
   .tab-navigation {
     display: flex;
     overflow-x: auto;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     padding-bottom: 5px;
   }
 
@@ -288,19 +393,26 @@ body {
   }
 
   .user-form .row > div {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
   }
-  
+
+  .alert-info {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 0.95em;
+  }
+
   .input-group {
     flex-direction: column;
   }
-  
+
   .input-group .form-control {
     width: 100%;
     border-radius: 4px !important;
     margin-bottom: 5px;
   }
-  
+
   .input-group .btn {
     width: 100%;
     border-radius: 4px !important;
@@ -324,4 +436,171 @@ body {
 
 .dark-mode .day-tab.active {
   background-color: #aa82ff;
+}
+
+/* Custom Week Picker Modal Styles */
+.week-picker-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.week-picker-content {
+  background-color: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.week-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.week-picker-header h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.week-picker-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.week-picker-close:hover {
+  background-color: #f8f9fa;
+}
+
+.week-picker-body {
+  padding: 1rem;
+}
+
+.month-year-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.month-year-selector span {
+  font-weight: 600;
+  min-width: 150px;
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 1rem;
+}
+
+.calendar-day-header {
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #6c757d;
+  background-color: #f8f9fa;
+}
+
+.calendar-day {
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.calendar-day:hover {
+  background-color: #e9ecef;
+}
+
+.calendar-day.other-month {
+  color: #adb5bd;
+}
+
+.calendar-day.selected-week {
+  background-color: #8a56fb;
+  color: white;
+}
+
+.calendar-day.today {
+  font-weight: bold;
+  border: 2px solid #8a56fb;
+}
+
+.week-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Dark mode styles for week picker */
+.dark-mode .week-picker-content {
+  background-color: #343a40;
+  color: #f8f9fa;
+}
+
+.dark-mode .week-picker-header {
+  border-bottom-color: #495057;
+}
+
+.dark-mode .week-picker-close:hover {
+  background-color: #495057;
+}
+
+.dark-mode .calendar-day-header {
+  background-color: #495057;
+  color: #adb5bd;
+}
+
+.dark-mode .calendar-day:hover {
+  background-color: #495057;
+}
+
+.dark-mode .calendar-day.other-month {
+  color: #6c757d;
+}
+
+.dark-mode .calendar-day.selected-week {
+  background-color: #aa82ff;
+}
+
+.dark-mode .calendar-day.today {
+  border-color: #aa82ff;
+}
+
+.dark-mode .week-picker-footer {
+  border-top-color: #495057;
 }
