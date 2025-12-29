@@ -84,9 +84,16 @@ def get_day(search_date, search_user):
             start_time = line.find('div', class_='Debut')
             end_time = line.find('div', class_='Fin')
             
+            room_text = room.text.strip() if room else None
+            if room_text:
+                if room_text.startswith("SALLE_"):
+                    room_text = "DISTANCIEL"
+                elif room_text.startswith("B"):
+                    room_text = "Inconnue"
+
             edt_element = EdtElement(
                 name=name.text.strip() if name else None,
-                room="DISTANCIEL" if room and room.text.strip().startswith("SALLE_") else (room.text.strip() if room else None),
+                room=room_text,
                 teacher=teacher.text.strip() if teacher else None,
                 date=search_date,
                 start_time=start_time.text.strip() if start_time else None,
