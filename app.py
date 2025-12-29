@@ -88,7 +88,7 @@ def get_day(search_date, search_user):
             if room_text:
                 if room_text.startswith("SALLE_"):
                     room_text = "DISTANCIEL"
-                elif room_text.startswith("B"):
+                elif not room_text.startswith("T "):
                     room_text = "Inconnue"
 
             edt_element = EdtElement(
