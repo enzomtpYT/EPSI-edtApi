@@ -191,9 +191,32 @@ def static_files(filename):
     """Serve static files with optimal caching headers"""
     try:
         response = make_response(app.send_static_file(filename))
-        return add_cache_headers(response, 'static')
+        # Manifest and Service Worker should be revalidated frequently
+        if filename in ['manifest.json', 'service-worker.js']:
+            response.headers['Cache-Control'] = 'public, max-age=3600, must-revalidate'
+            response.headers['Content-Type'] = 'application/json' if filename == 'manifest.json' else 'application/javascript'
+        else:
+            response = add_cache_headers(response, 'static')
+        return response
     except Exception:
         return "File not found", 404
+
+@app.route('/manifest.json')
+def manifest():
+    """Serve manifest.json with proper headers"""
+    response = make_response(app.send_static_file('manifest.json'))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Cache-Control'] = 'public, max-age=3600, must-revalidate'
+    return response
+
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve service-worker.js with proper headers"""
+    response = make_response(app.send_static_file('service-worker.js'))
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Cache-Control'] = 'public, max-age=3600, must-revalidate'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 @app.before_request
 def handle_conditional_requests():
