@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EPSI Emploi du temps</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#333333" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EPSI EDT" />
     <!-- Bootstrap Icons (still useful for icons) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
@@ -831,6 +838,34 @@
           const hour12 = hour % 12 || 12;
           return `${hour12}:${minutes} ${period}`;
         }
+      });
+
+      // Enregistrement du Service Worker pour PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then((registration) => {
+              console.log('Service Worker enregistré avec succès:', registration);
+            })
+            .catch((error) => {
+              console.warn('Erreur lors de l\'enregistrement du Service Worker:', error);
+            });
+        });
+      }
+
+      // Gestion du prompt d'installation PWA
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        // Afficher un bouton ou un message pour installer l'app
+        console.log('PWA installation available');
+      });
+
+      // Écouteur pour le succès/échec de l'installation
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
+        deferredPrompt = null;
       });
     </script>
   </body>
